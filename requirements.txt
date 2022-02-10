@@ -1,0 +1,7 @@
+setuptools-rust==0.12.1
+configparser
+paramiko
+pymysql
+python-hpilo
+pprintpp
+datetime
