@@ -5,15 +5,14 @@ import configparser
 import paramiko as paramiko
 import pymysql.cursors
 
-config = configparser.ConfigParser()
-config.read('config.ini')
-mysql = config['mysql']
-
+ini = configparser.ConfigParser()
+ini.read('config.ini')
+mysql = ini['mysql']
 
 # CONF DE LA BASE DE DONNEE
 def startDB():
-    # La fonction renvoie une connexion.
     global conn, cur
+    # La fonction renvoie une connexion.
     # Vous pouvez changer les arguments de la connexion.
     conn = pymysql.connect(host=mysql['host'],
                            user=mysql['username'],
@@ -24,8 +23,8 @@ def startDB():
     # Création du cursor
     cur = conn.cursor()
 
-
 def closeDB():
+
     conn.commit()
     conn.close()
 
@@ -34,7 +33,7 @@ def closeDB():
 def connect():
     startDB()
     closeDB()
-
+connect()
 
 # Insérer des données à la base de donnée (pas optimisé pour l'upsmgr)
 def insert(title, author, year, isbn):
@@ -47,7 +46,6 @@ def insert(title, author, year, isbn):
 # Récupérer la config pour la table passé en paramêtre
 def getConfig(table):
     global identifiants
-
     startDB()
     #cur.execute("SELECT nom, host, port, username, passwd FROM %s" % (table))
 
@@ -85,8 +83,6 @@ def getConfig(table):
                          "\npassword = %s \n" % passwordServeur]
         x += 1
 
-getConfig("ilo")
-
 # Fonction qui va mettre à jour le fichier config.ini
 def updateConfigIni():
     global nomServeur
@@ -114,10 +110,9 @@ def updateConfigIni():
 
                 f.write(identifiants[i])
                 i += 1
-updateConfigIni()
 
 # SSH (module fonctionnel, mais pas pour les ILO)
-def getConnectionSSH(host, port, username, password, command):
+def getConnexionSSH(host, port, username, password, command):
     ssh = paramiko.SSHClient()
 
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -129,3 +124,6 @@ def getConnectionSSH(host, port, username, password, command):
     connection = stdout.readlines()
 
     return connection
+
+def getAllNomServeur():
+    return nomServeur
