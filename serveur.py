@@ -16,7 +16,7 @@ def updateEtatServeurs(table, etat, nom):
     config.startDB()
 
     # Les %s permettent d'incorporer des variables à un string, là, c'est la requête SQL
-    query = "UPDATE %s SET etat = '%s', last_update = '%s'  WHERE nom = '%s'" % (table, etat, timestamp, nom)
+    query = "UPDATE %s SET etat = '%s', last_update = '%s' WHERE nom = '%s'" % (table, etat, timestamp, nom)
     config.cur.execute(query)
     config.closeDB()
 

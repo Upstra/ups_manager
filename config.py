@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-# Import des modules.
 import configparser
 import paramiko as paramiko
 import pymysql.cursors
@@ -8,6 +7,8 @@ import pymysql.cursors
 ini = configparser.ConfigParser()
 ini.read('config.ini')
 mysql = ini['mysql']
+nomServeur = ""
+identifiants = []
 
 # CONF DE LA BASE DE DONNEE
 def startDB():
