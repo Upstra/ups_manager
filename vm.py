@@ -1,8 +1,7 @@
-#!/usr/bin/env python
-
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
 import ssl
+import argparse
 
 
 class Vm:
@@ -38,3 +37,16 @@ def get_vms(host: str, user: str, password: str, port=443) -> list[Vm]:
 
     Disconnect(si)
     return vms
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Lister les VM d'un serveur")
+    parser.add_argument("--ip", required=True, help="Adresse IP du serveur")
+    parser.add_argument("--user", required=True, help="Nom d'utilisateur")
+    parser.add_argument("--password", required=True, help="Mot de passe")
+    parser.add_argument("--port", type=int, default=443, help="Port du serveur")
+
+    args = parser.parse_args()
+
+    vms = get_vms(args.ip, args.user, args.password, args.port)
+    for vm in vms:
+        print(vm.to_json())

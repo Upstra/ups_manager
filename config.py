@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import configparser
 import paramiko as paramiko
 import pymysql.cursors

@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-
-# Import des modules.
 from re import search
 import hpilo
 import config

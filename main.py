@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-
-# Import des modules.
 import config
 import serveur
 
