@@ -1,2 +1,8 @@
 # Project exclude paths
 /venv/Desktop/SIO1/Programmation/Python/
+
+.venv
+
+.idea
+
+__pycache__/
