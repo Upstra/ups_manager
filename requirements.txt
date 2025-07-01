@@ -5,3 +5,4 @@ python-hpilo
 pprintpp
 datetime
 pyvmomi
+pyyaml
