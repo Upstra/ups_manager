@@ -24,7 +24,7 @@ if ! docker ps --format '{{.Names}}' | grep -q '^python_app$'; then
     sleep 3
 fi
 
-CMD="docker exec -i python_app python vm.py --ip \"$IP\" --user \"$USER\" --password \"$PASSWORD\""
+CMD="docker exec -i python_app python list_vm.py --ip \"$IP\" --user \"$USER\" --password \"$PASSWORD\""
 if [[ -n "$PORT" ]]; then
     CMD+=" --port \"$PORT\""
 fi
