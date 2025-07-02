@@ -1,5 +1,6 @@
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
+from pyVmomi.vim.fault import InvalidLogin
 from argparse import ArgumentParser
 import ssl
 
@@ -20,11 +21,18 @@ class Vm:
         }
 
 
-def get_vms(host: str, user: str, password: str, port=443) -> list[Vm]:
+def get_vms(host: str, user: str, password: str, port=443) -> list[Vm] | None:
     # Ignorer les vérifications SSL (attention en production)
     context = ssl._create_unverified_context()
 
-    si = SmartConnect(host=host, user=user, pwd=password, port=port, sslContext=context)
+    try:
+        si = SmartConnect(host=host, user=user, pwd=password, port=port, sslContext=context)
+    except InvalidLogin as err:
+        print(err.message)
+        return None
+    except Exception as err:
+        print(err)
+        return None
     content = si.RetrieveContent()
 
     vms = []
@@ -48,5 +56,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     vms = get_vms(args.ip, args.user, args.password, args.port)
-    for vm in vms:
-        print(vm.to_json())
+    if vms is not None:
+        for vm in vms:
+            print(vm.to_json())
