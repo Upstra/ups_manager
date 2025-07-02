@@ -2,7 +2,7 @@ import config
 import serveur
 
 # Partie initialisation config
-import vm
+import list_vm
 
 config.getConfig("ilo")
 config.updateConfigIni()
@@ -14,4 +14,4 @@ serveur.getEtatServeurs()
 serveur.arret("esxsrv5")
 
 # ATTENTION - Cette fonction n'est pas finie, il faut la retravailler (mais elle est utilisable pour des test)
-#vm.getListeVms()
+# list_vm.get_vms()

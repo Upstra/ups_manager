@@ -1,3 +1,5 @@
+from typing import Any
+
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
 from argparse import ArgumentParser
@@ -11,7 +13,12 @@ class Vm:
         self.guest_os = guest_os
         self.ip = ip
 
-    def to_json(self):
+    def to_json(self) -> dict[str, str]:
+        """
+        Convert the actual vm object to a json object
+        Returns:
+            dict[str, str]: A json dictionary with the keys name, power_state, guest_os and ip
+        """
         return {
             "name": self.name,
             "power_state": self.power_state,
@@ -21,13 +28,25 @@ class Vm:
 
 
 def get_vms(host: str, user: str, password: str, port=443) -> list[Vm] | None:
+    """
+    Retrieves a list of virtual machines from a server host
+    Args:
+        host (str): The IP address or hostname of the server
+        user (str): The username for authentication
+        password (str): The password of the user
+        port (int, optional): The port to use for the connection (default is 443)
+    Returns:
+        list[Vm] | None: A list of `Vm` objects representing the discovered virtual machines,
+        or `None` in case there is an error
+    """
+
     # Ignorer les vérifications SSL (attention en production)
     context = ssl._create_unverified_context()
 
     try:
         si = SmartConnect(host=host, user=user, pwd=password, port=port, sslContext=context)
-    except vim.fault.InvalidLogin as err:
-        print(err.message)
+    except vim.fault.InvalidLogin as _:
+        print("Mot de passe incorrect")
         return None
     except Exception as err:
         print(err)

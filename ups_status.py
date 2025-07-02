@@ -5,7 +5,17 @@ from os.path import join as path_join
 import logging
 
 
-def get_ups_status(ups_name, host="localhost"):
+def get_ups_status(ups_name: str, host="localhost") -> dict:
+    """
+    Get the current status of an UPS server. The status is eather:
+        - "OL" for On Line, which means there is no power failure
+        - "OB" for On Battery, which means the ups doesn't receive power anymore, so there is a power failure
+        - "LB" for Low Battery, which means the ups will shutdown soon and stop giving power
+        - "CHRG" for Charging, which means the power came back and the ups is recovering and charging its battery
+    Args:
+        ups_name (str): The name of the UPS
+        host (str, optional): The host to connect to. Defaults to "localhost"
+    """
     output = command_run(["upsc", f"{ups_name}@{host}"], text=True)
     status_lines = output.strip().splitlines()
     status_dict = {}

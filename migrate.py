@@ -22,7 +22,15 @@ class Server:
     destination: str
     vms: VMs
 
+
 def load_plan_from_yaml(file_path: str) -> list[Server]:
+    """
+    Load a migration plan stored in a YAML file
+    Args:
+        file_path (str): The path to the migration plan
+    Returns:
+        list[Server]: A list of `Server` objects representing the migration plan for each server
+    """
     with open(file_path, 'r') as f:
         data = yaml_load(f)['servers']
 
@@ -41,7 +49,13 @@ def load_plan_from_yaml(file_path: str) -> list[Server]:
         )
     return servers
 
+
 def restart_plan(servers: list[Server]) -> None:
+    """
+    Launch the restart plan of all servers specified in `servers` to go back to the initial state
+    Args:
+        servers (list[Server]): The migration plan for each server
+    """
     for server in servers:
         print(f"Migration du serveur {server.name}")
         ip = server.ip
@@ -52,7 +66,13 @@ def restart_plan(servers: list[Server]) -> None:
             print(f"Power ON: {vm}")
             sleep(start_delay)
 
+
 def shutdown_plan(servers: list[Server]) -> None:
+    """
+    Launch the shutdown plan of all servers specified in `servers` to migrate each vm to a distant server
+    Args:
+        servers (list[Server]): The migration plan for each server
+    """
     for server in servers:
         print(f"Migration du serveur {server.name}")
         ip = server.ip
