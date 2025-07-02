@@ -115,4 +115,4 @@ if __name__ == "__main__":
     vms = get_vms(args.ip, args.user, args.password, args.port)
     if vms is not None:
         for vm in vms:
-            print(vm.to_json())
+            print(to_json(vm))
