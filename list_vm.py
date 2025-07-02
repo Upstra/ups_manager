@@ -1,7 +1,7 @@
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
+from argparse import ArgumentParser
 import ssl
-import argparse
 
 
 class Vm:
@@ -22,7 +22,7 @@ class Vm:
 
 def get_vms(host: str, user: str, password: str, port=443) -> list[Vm]:
     # Ignorer les vérifications SSL (attention en production)
-    context = ssl._create_unverified_context() #
+    context = ssl._create_unverified_context()
 
     si = SmartConnect(host=host, user=user, pwd=password, port=port, sslContext=context)
     content = si.RetrieveContent()
@@ -39,7 +39,7 @@ def get_vms(host: str, user: str, password: str, port=443) -> list[Vm]:
     return vms
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Lister les VM d'un serveur")
+    parser = ArgumentParser(description="Lister les VM d'un serveur")
     parser.add_argument("--ip", required=True, help="Adresse IP du serveur")
     parser.add_argument("--user", required=True, help="Nom d'utilisateur")
     parser.add_argument("--password", required=True, help="Mot de passe")
