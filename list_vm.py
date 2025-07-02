@@ -1,5 +1,3 @@
-from typing import Any
-
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
 from argparse import ArgumentParser
@@ -27,7 +25,48 @@ class Vm:
         }
 
 
-def get_vms(host: str, user: str, password: str, port=443) -> list[Vm] | None:
+def to_json(vm: vim.VirtualMachine):
+    return {
+        "name": vm.name,
+        "config": vm.config,
+        "summary": vm.summary,
+        "availableField": vm.availableField,
+        "alarmActionsEnabled": vm.alarmActionsEnabled,
+        "capability": vm.capability,
+        "configIssue": vm.configIssue,
+        "configStatus": vm.configStatus,
+        "customValue": vm.customValue,
+        "datastore": vm.datastore,
+        "declaredAlarmState": vm.declaredAlarmState,
+        "disabledMethod": vm.disabledMethod,
+        "effectiveRole": vm.effectiveRole,
+        "environmentBrowser": vm.environmentBrowser,
+        "guest": vm.guest,
+        "guestHeartbeatStatus": vm.guestHeartbeatStatus,
+        "guest_os": vm.guest_os,
+        "layout": vm.layout,
+        "layoutEx": vm.layoutEx,
+        "network": vm.network,
+        "overallStatus": vm.overallStatus,
+        "parent": vm.parent,
+        "parentVApp": vm.parentVApp,
+        "permission": vm.permission,
+        "recentTask": vm.recentTask,
+        "resourceConfig": vm.resourceConfig,
+        "resourcePool": vm.resourcePool,
+        "runtime": vm.runtime,
+        "rootSnapshot": vm.rootSnapshot,
+        "snapshot": vm.snapshot,
+        "storage": vm.storage,
+        "tag": vm.tag,
+        "triggeredAlarmState": vm.triggeredAlarmState,
+        "power_state": vm.power_state,
+        "ip": vm.ip,
+        "value": vm.value
+    }
+
+
+def get_vms(host: str, user: str, password: str, port=443) -> list[vim.VirtualMachine] | None:
     """
     Retrieves a list of virtual machines from a server host
     Args:
@@ -36,13 +75,10 @@ def get_vms(host: str, user: str, password: str, port=443) -> list[Vm] | None:
         password (str): The password of the user
         port (int, optional): The port to use for the connection (default is 443)
     Returns:
-        list[Vm] | None: A list of `Vm` objects representing the discovered virtual machines,
+        list[vim.VirtualMachine] | None: A list of `VirtualMachine` objects representing the discovered virtual machines,
         or `None` in case there is an error
     """
-
-    # Ignorer les vérifications SSL (attention en production)
     context = ssl._create_unverified_context()
-
     try:
         si = SmartConnect(host=host, user=user, pwd=password, port=port, sslContext=context)
     except vim.fault.InvalidLogin as _:
@@ -59,10 +95,13 @@ def get_vms(host: str, user: str, password: str, port=443) -> list[Vm] | None:
         vm_list = vm_folder.childEntity
         for vm in vm_list:
             if isinstance(vm, vim.VirtualMachine):
-                vms.append(Vm(vm.name, vm.runtime.powerState, vm.config.guestFullName, vm.summary.guest.ipAddress))
+                vms.append(vm)
+            else:
+                print(f"Element is not a VirtualMachine : {vm}")
 
     Disconnect(si)
     return vms
+
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Lister les VM d'un serveur")
