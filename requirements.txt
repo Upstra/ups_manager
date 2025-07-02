@@ -6,3 +6,4 @@ pprintpp
 datetime
 pyvmomi
 pyyaml
+python-dotenv
