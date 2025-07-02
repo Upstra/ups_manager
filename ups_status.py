@@ -24,11 +24,16 @@ if __name__ == "__main__":
             ups_status = status.get("ups.status", "Inconnu")
             print(f"Statut UPS : {ups_status} - {strftime('%H:%M:%S')}")
             if "OL" in ups_status:
-                print("✅ Onduleur sur secteur")
+                print("Onduleur sur secteur (On Line)")
             elif "OB" in ups_status:
-                print("🔋 Onduleur sur batterie")
+                print("Onduleur sur batterie (On Battery)")
+            elif "LB" in ups_status:
+                print("Onduleur sur batterie critique (Low Battery)")
+            elif "CHRG" in ups_status:
+                print("Onduleur en charge")
             else:
                 print("⚠️ Statut inconnu ou non accessible")
         except Exception as e:
             print(f"Erreur : {e}")
         sleep(10)
+        
