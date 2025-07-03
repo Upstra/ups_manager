@@ -28,6 +28,9 @@ class Vm:
 def to_json(vm: vim.VirtualMachine):
     return {
         "name": vm.name,
+        "guest_os": vm.config.guestFullName,
+        "power_state": vm.runtime.powerState,
+        "ip": vm.summary.guest.ipAddress,
         "config": vm.config,
         "summary": vm.summary,
         "availableField": vm.availableField,
@@ -43,7 +46,6 @@ def to_json(vm: vim.VirtualMachine):
         "environmentBrowser": vm.environmentBrowser,
         "guest": vm.guest,
         "guestHeartbeatStatus": vm.guestHeartbeatStatus,
-        "guest_os": vm.guest_os,
         "layout": vm.layout,
         "layoutEx": vm.layoutEx,
         "network": vm.network,
@@ -60,8 +62,6 @@ def to_json(vm: vim.VirtualMachine):
         "storage": vm.storage,
         "tag": vm.tag,
         "triggeredAlarmState": vm.triggeredAlarmState,
-        "power_state": vm.power_state,
-        "ip": vm.ip,
         "value": vm.value
     }
 
