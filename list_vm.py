@@ -27,7 +27,7 @@ class Vm:
         }
 
 
-def to_json(obj, depth=0, max_depth=5, visited=None):
+def to_json(obj, depth=0, max_depth=10, visited=None):
     if visited is None:
         visited = set()
 
@@ -48,36 +48,41 @@ def to_json(obj, depth=0, max_depth=5, visited=None):
     if isinstance(obj, vim.ManagedEntity) or isinstance(obj, vim.ManagedObject):
         # prevent infinite recursion (in case of cycles)
         if obj._moId in visited:
-            return f"<Already visited {obj.__class__.__name__}:{obj._moId}>"
+            return None
         visited.add(obj._moId)
 
-        result = {"_type": obj.__class__.__name__, "_moId": obj._moId}
+        result = {}
         for attr in dir(obj):
-            if attr.startswith("_"):
+            if attr.startswith("_") or attr == "dynamicType" or attr == "dynamicProperty":
                 continue
             try:
                 value = getattr(obj, attr)
-            except Exception as e:
-                result[attr] = f"<Error: {e}>"
+            except Exception as _:
                 continue
 
             if callable(value):
                 continue
 
             try:
-                result[attr] = to_json(value, depth + 1, max_depth, visited)
-            except Exception as e:
-                result[attr] = f"<Error: {e}>"
+                json = to_json(value, depth + 1, max_depth, visited)
+                if json is not None:
+                    result[attr] = json
+            except Exception as _:
+                continue
 
         return result
 
     if hasattr(obj, "__dict__"):
-        result = {"_type": obj.__class__.__name__}
+        result = {}
         for attr, value in obj.__dict__.items():
+            if attr.startswith("_") or attr == "dynamicType" or attr == "dynamicProperty":
+                continue
             try:
-                result[attr] = to_json(value, depth + 1, max_depth, visited)
-            except Exception as e:
-                result[attr] = f"<Error: {e}>"
+                json = to_json(value, depth + 1, max_depth, visited)
+                if json is not None:
+                    result[attr] = json
+            except Exception as _:
+                continue
         return result
 
     return str(obj)
