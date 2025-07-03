@@ -1,3 +1,5 @@
+import json
+
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
 from argparse import ArgumentParser
@@ -25,45 +27,106 @@ class Vm:
         }
 
 
-def to_json(vm: vim.VirtualMachine):
-    return {
-        "name": vm.name,
-        "guest_os": vm.config.guestFullName,
-        "power_state": vm.runtime.powerState,
-        "ip": vm.summary.guest.ipAddress,
-        "config": vm.config,
-        "summary": vm.summary,
-        "availableField": vm.availableField,
-        "alarmActionsEnabled": vm.alarmActionsEnabled,
-        "capability": vm.capability,
-        "configIssue": vm.configIssue,
-        "configStatus": vm.configStatus,
-        "customValue": vm.customValue,
-        "datastore": vm.datastore,
-        "declaredAlarmState": vm.declaredAlarmState,
-        "disabledMethod": vm.disabledMethod,
-        "effectiveRole": vm.effectiveRole,
-        "environmentBrowser": vm.environmentBrowser,
-        "guest": vm.guest,
-        "guestHeartbeatStatus": vm.guestHeartbeatStatus,
-        "layout": vm.layout,
-        "layoutEx": vm.layoutEx,
-        "network": vm.network,
-        "overallStatus": vm.overallStatus,
-        "parent": vm.parent,
-        "parentVApp": vm.parentVApp,
-        "permission": vm.permission,
-        "recentTask": vm.recentTask,
-        "resourceConfig": vm.resourceConfig,
-        "resourcePool": vm.resourcePool,
-        "runtime": vm.runtime,
-        "rootSnapshot": vm.rootSnapshot,
-        "snapshot": vm.snapshot,
-        "storage": vm.storage,
-        "tag": vm.tag,
-        "triggeredAlarmState": vm.triggeredAlarmState,
-        "value": vm.value
-    }
+def to_json(obj, depth=0, max_depth=5, visited=None):
+    if visited is None:
+        visited = set()
+
+    if depth > max_depth:
+        return f"<MaxDepth {max_depth} reached>"
+
+    # primitive type
+    if isinstance(obj, (str, int, float, bool)) or obj is None:
+        return obj
+
+    # lists
+    if isinstance(obj, list):
+        return [
+            to_json(item, depth, max_depth, visited) for item in obj
+        ]
+
+    # handle ManagedObject
+    if isinstance(obj, vim.ManagedEntity) or isinstance(obj, vim.ManagedObject):
+        # prevent infinite recursion (in case of cycles)
+        if obj._moId in visited:
+            return f"<Already visited {obj.__class__.__name__}:{obj._moId}>"
+        visited.add(obj._moId)
+
+        result = {"_type": obj.__class__.__name__, "_moId": obj._moId}
+        for attr in dir(obj):
+            if attr.startswith("_"):
+                continue
+            try:
+                value = getattr(obj, attr)
+            except Exception as e:
+                result[attr] = f"<Error: {e}>"
+                continue
+
+            if callable(value):
+                continue
+
+            try:
+                result[attr] = to_json(value, depth + 1, max_depth, visited)
+            except Exception as e:
+                result[attr] = f"<Error: {e}>"
+
+        return result
+
+    if hasattr(obj, "__dict__"):
+        result = {"_type": obj.__class__.__name__}
+        for attr, value in obj.__dict__.items():
+            try:
+                result[attr] = to_json(value, depth + 1, max_depth, visited)
+            except Exception as e:
+                result[attr] = f"<Error: {e}>"
+        return result
+
+    return str(obj)
+
+# def to_json(vm: vim.VirtualMachine):
+#     return {
+#         "name": vm.name,
+#         "guest_os": vm.config.guestFullName,
+#         "power_state": vm.runtime.powerState,
+#         "ip": vm.summary.guest.ipAddress,
+#
+#         "config_name": vm.config.name,
+#         "config_repConfig": vm.config.repConfig,
+#         "config_vcpu": vm.config.vcpuConfig,
+#         "config_ram": vm.config.ramConfig,
+#         "config_alternateGuestName": vm.config.alternateGuestName,
+#
+#         "summary": vm.summary,
+#         "availableField": vm.availableField,
+#         "alarmActionsEnabled": vm.alarmActionsEnabled,
+#         "capability": vm.capability,
+#         "configIssue": vm.configIssue,
+#         "configStatus": vm.configStatus,
+#         "customValue": vm.customValue,
+#         "datastore": vm.datastore,
+#         "declaredAlarmState": vm.declaredAlarmState,
+#         "disabledMethod": vm.disabledMethod,
+#         "effectiveRole": vm.effectiveRole,
+#         "environmentBrowser": vm.environmentBrowser,
+#         "guest": vm.guest,
+#         "guestHeartbeatStatus": vm.guestHeartbeatStatus,
+#         "layout": vm.layout,
+#         "layoutEx": vm.layoutEx,
+#         "network": vm.network,
+#         "overallStatus": vm.overallStatus,
+#         "parent": vm.parent,
+#         "parentVApp": vm.parentVApp,
+#         "permission": vm.permission,
+#         "recentTask": vm.recentTask,
+#         "resourceConfig": vm.resourceConfig,
+#         "resourcePool": vm.resourcePool,
+#         "runtime": vm.runtime,
+#         "rootSnapshot": vm.rootSnapshot,
+#         "snapshot": vm.snapshot,
+#         "storage": vm.storage,
+#         "tag": vm.tag,
+#         "triggeredAlarmState": vm.triggeredAlarmState,
+#         "value": vm.value,
+#     }
 
 
 def get_vms(host: str, user: str, password: str, port=443) -> list[vim.VirtualMachine] | None:
@@ -95,8 +158,11 @@ def get_vms(host: str, user: str, password: str, port=443) -> list[vim.VirtualMa
         vm_list = vm_folder.childEntity
         for vm in vm_list:
             if isinstance(vm, vim.VirtualMachine):
-                print(to_json(vm))
+                with open("vm_info.json", "w") as f:
+                    f.write(json.dumps(to_json(vm), indent=4))
                 # vms.append(vm)
+                Disconnect(si)
+                return vms
             else:
                 print(f"Element is not a VirtualMachine : {vm}")
 
