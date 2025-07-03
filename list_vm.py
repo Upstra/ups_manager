@@ -32,7 +32,7 @@ def to_json(obj, depth=0, max_depth=10, visited=None):
         visited = set()
 
     if depth > max_depth:
-        return f"<MaxDepth {max_depth} reached>"
+        return None
 
     # primitive type
     if isinstance(obj, (str, int, float, bool)) or obj is None:
@@ -69,7 +69,8 @@ def to_json(obj, depth=0, max_depth=10, visited=None):
                     result[attr] = json
             except Exception as _:
                 continue
-
+        if result == {}:
+            return None
         return result
 
     if hasattr(obj, "__dict__"):
@@ -83,6 +84,8 @@ def to_json(obj, depth=0, max_depth=10, visited=None):
                     result[attr] = json
             except Exception as _:
                 continue
+        if result == {}:
+            return None
         return result
 
     return str(obj)
