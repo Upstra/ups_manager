@@ -95,7 +95,8 @@ def get_vms(host: str, user: str, password: str, port=443) -> list[vim.VirtualMa
         vm_list = vm_folder.childEntity
         for vm in vm_list:
             if isinstance(vm, vim.VirtualMachine):
-                vms.append(vm)
+                print(to_json(vm))
+                # vms.append(vm)
             else:
                 print(f"Element is not a VirtualMachine : {vm}")
 
@@ -113,6 +114,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     vms = get_vms(args.ip, args.user, args.password, args.port)
-    if vms is not None:
-        for vm in vms:
-            print(to_json(vm))
+    # if vms is not None:
+    #     for vm in vms:
+    #         print(to_json(vm))
