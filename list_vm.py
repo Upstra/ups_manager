@@ -14,6 +14,12 @@ def to_json(vm: vim.VirtualMachine):
             "diskType": getattr(disk, "diskType", None)
         }
 
+    def disk_layout_to_dict(dl):
+        return {
+            "key": getattr(dl, "key", None),
+            "chain": [c for c in getattr(dl, "chain", [])]
+        }
+
     return {
         "name": vm.name,
         "hostName": vm.guest.hostName,
@@ -44,7 +50,7 @@ def to_json(vm: vim.VirtualMachine):
 
         "vmPathName": vm.summary.config.vmPathName,
         "disks": [disk_to_dict(d) for d in vm.guest.disk],
-        "diskLayout": vm.layout,
+        "diskLayout": disk_layout_to_dict(vm.layout),
         "datastore": vm.config.datastoreUrl
     }
 
