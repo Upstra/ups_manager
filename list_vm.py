@@ -20,6 +20,12 @@ def to_json(vm: vim.VirtualMachine):
             "chain": [c for c in getattr(dl, "chain", [])]
         }
 
+    def datastore_url_to_dict(ds):
+        return {
+            "name": getattr(ds, "name", None),
+            "url": getattr(ds, "url", None)
+        }
+
     return {
         "name": vm.name,
         "hostName": vm.guest.hostName,
@@ -51,7 +57,7 @@ def to_json(vm: vim.VirtualMachine):
         "vmPathName": vm.summary.config.vmPathName,
         "disks": [disk_to_dict(d) for d in vm.guest.disk],
         "diskLayout": disk_layout_to_dict(vm.layout),
-        "datastore": vm.config.datastoreUrl
+        "datastore": datastore_url_to_dict(vm.config.datastoreUrl)
     }
 
 
