@@ -14,7 +14,7 @@ def to_json(vm: vim.VirtualMachine):
         "guestOs": vm.config.guestFullName,
         "guestFamily": vm.guest.guestFamily,
         "version": vm.config.version,
-        "createDate": vm.config.createTime,
+        "createDate": vm.config.createDate,
         "bootTime": vm.runtime.bootTime,
         "uptimeSeconds": vm.summary.quickStats.uptimeSeconds,
         "powerState": vm.runtime.powerState,
