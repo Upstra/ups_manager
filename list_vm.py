@@ -81,14 +81,16 @@ def get_vms(host: str, user: str, password: str, port=443) -> None:
         return
     content = si.RetrieveContent()
 
+    vms = {"vms": []}
     for datacenter in content.rootFolder.childEntity:
         vm_folder = datacenter.vmFolder
         vm_list = vm_folder.childEntity
         for vm in vm_list:
             if isinstance(vm, vim.VirtualMachine):
-                print(json_dumps(to_json(vm)))
+                vms["vms"].append(to_json(vm))
             else:
                 print(f"Element is not a VirtualMachine : {vm}")
+    print(vms)
     Disconnect(si)
 
 
