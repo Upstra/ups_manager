@@ -6,6 +6,14 @@ import ssl
 
 
 def to_json(vm: vim.VirtualMachine):
+    def disk_to_dict(disk):
+        return {
+            "diskPath": getattr(disk, "diskPath", None),
+            "capacity": getattr(disk, "capacity", None),
+            "freeSpace": getattr(disk, "freeSpace", None),
+            "diskType": getattr(disk, "diskType", None)
+        }
+
     return {
         "name": vm.name,
         "hostName": vm.guest.hostName,
@@ -35,7 +43,7 @@ def to_json(vm: vim.VirtualMachine):
         "totalStorage": vm.summary.storage.committed + vm.summary.storage.uncommitted,
 
         "vmPathName": vm.summary.config.vmPathName,
-        "disks": vm.guest.disk,
+        "disks": [disk_to_dict(d) for d in vm.guest.disk],
         "diskLayout": vm.layout,
         "datastore": vm.config.datastoreUrl
     }
