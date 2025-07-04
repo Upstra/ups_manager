@@ -34,7 +34,7 @@ def to_json(vm: vim.VirtualMachine):
         "usedStorage": vm.summary.storage.committed,
         "totalStorage": vm.summary.storage.committed + vm.summary.storage.uncommitted,
 
-        "vmPathName": vm.summary.vmPathName,
+        "vmPathName": vm.summary.config.vmPathName,
         "disks": vm.guest.disk,
         "diskLayout": vm.layout,
         "datastore": vm.config.datastoreUrl
