@@ -6,26 +6,6 @@ import ssl
 
 
 def to_json(vm: vim.VirtualMachine):
-    def disk_to_dict(disk):
-        return {
-            "diskPath": getattr(disk, "diskPath", None),
-            "capacity": getattr(disk, "capacity", None),
-            "freeSpace": getattr(disk, "freeSpace", None),
-            "diskType": getattr(disk, "diskType", None)
-        }
-
-    def disk_layout_to_dict(dl):
-        return {
-            "key": getattr(dl, "key", None),
-            "chain": [c for c in getattr(dl, "chain", [])]
-        }
-
-    def datastore_url_to_dict(ds):
-        return {
-            "name": getattr(ds, "name", None),
-            "url": getattr(ds, "url", None)
-        }
-
     return {
         "name": vm.name,
         "hostName": vm.guest.hostName,
@@ -47,17 +27,10 @@ def to_json(vm: vim.VirtualMachine):
         "numCoresPerSocket": vm.config.hardware.numCoresPerSocket,
         "numCPU": vm.config.hardware.numCPU,
         "maxMemoryUsage": vm.runtime.maxMemoryUsage,
-        "memoryMB": vm.config.hardware.memoryMB,
-        "memorySizeMB": vm.summary.config.memorySizeMB,
-        "hostMemoryUsage": vm.summary.quickStats.hostMemoryUsage,
         "swappedMemory": vm.summary.quickStats.swappedMemory,
         "usedStorage": vm.summary.storage.committed,
         "totalStorage": vm.summary.storage.committed + vm.summary.storage.uncommitted,
-
-        "vmPathName": vm.summary.config.vmPathName,
-        "disks": [disk_to_dict(d) for d in vm.guest.disk],
-        "diskLayout": disk_layout_to_dict(vm.layout),
-        "datastore": datastore_url_to_dict(vm.config.datastoreUrl)
+        "vmPathName": vm.summary.config.vmPathName
     }
 
 
