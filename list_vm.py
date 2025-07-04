@@ -90,7 +90,7 @@ def get_vms(host: str, user: str, password: str, port=443) -> None:
                 vms["vms"].append(to_json(vm))
             else:
                 print(f"Element is not a VirtualMachine : {vm}")
-    print(vms)
+    print(json_dumps(vms))
     Disconnect(si)
 
 
