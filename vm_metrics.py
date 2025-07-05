@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 from json import dumps as json_dumps
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
+from time import sleep
 
 from list_vm import error_message
 
@@ -53,9 +54,9 @@ def get_vm_metrics(vm_name: str, datacenter_name: str, host: str, user: str, pas
         vm = search_index.FindByInventoryPath(f"{datacenter_name}/vm/{vm_name}")
         if not vm:
             print(error_message("VM not found", 404))
-            Disconnect(si)
-            return
-        print(f"\r{json_dumps(to_json(vm))}", end='', flush=True)
+            break
+        print(json_dumps(to_json(vm)))
+        sleep(1)
 
     Disconnect(si)
 
