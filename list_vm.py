@@ -5,31 +5,46 @@ from argparse import ArgumentParser
 import ssl
 
 
-def to_json(vm: vim.VirtualMachine):
+VERIFIED_SSL = False
+
+
+def error_message(message: str, http_code = 400) -> str:
+    """
+    Dump a json formatted error message
+    Args:
+        message (str): The message explaining the error
+        http_code (int): The HTTP response code corresponding to the error (defaults to 400)
+    Returns:
+        str: A json dump of the error message
+    """
+    return json_dumps({
+        "error": {
+            "message": message,
+            "httpCode": http_code
+        }
+    })
+
+
+def to_json(vm: vim.VirtualMachine, datacenter_name: str) -> dict[str, str | int | None]:
+    """
+    Format VM data as json dictionary
+    Args:
+        vm (vim.VirtualMachine): The VM object where data is retrieved
+        datacenter_name (str): The name of the datacenter where the VM is stored for search function
+    Returns:
+        dict[str, str | int | None]: A dictionary formatted for json dumps
+    """
     return {
         "name": vm.name,
-        "hostName": vm.guest.hostName,
-        "isMigrating": vm.runtime.vmFailoverInProgress,
-        "ip": vm.summary.guest.ipAddress,
+        "datacenter": datacenter_name,
+        "hostName": vm.guest.hostName if vm.guest.hostName else "",
+        "ip": vm.summary.guest.ipAddress if vm.summary.guest.ipAddress else "",
         "guestOs": vm.config.guestFullName,
         "guestFamily": vm.guest.guestFamily,
         "version": vm.config.version,
-        "createDate": vm.config.createDate.isoformat(),
-        "bootTime": vm.runtime.bootTime.isoformat(),
-        "uptimeSeconds": vm.summary.quickStats.uptimeSeconds,
-        "powerState": vm.runtime.powerState,
-        "guestState": vm.guest.guestState,
-        "connectionState": vm.runtime.connectionState,
-        "guestHeartbeatStatus": vm.guestHeartbeatStatus,
-        "overallStatus": vm.overallStatus,
-        "maxCpuUsage": vm.runtime.maxCpuUsage,
-        "overallCpuUsage": vm.summary.quickStats.overallCpuUsage,
+        "createDate": vm.config.createDate.isoformat() if vm.config.createDate else "",
         "numCoresPerSocket": vm.config.hardware.numCoresPerSocket,
         "numCPU": vm.config.hardware.numCPU,
-        "maxMemoryUsage": vm.runtime.maxMemoryUsage,
-        "swappedMemory": vm.summary.quickStats.swappedMemory,
-        "usedStorage": vm.summary.storage.committed,
-        "totalStorage": vm.summary.storage.committed + vm.summary.storage.uncommitted,
         "vmPathName": vm.summary.config.vmPathName
     }
 
@@ -41,28 +56,32 @@ def get_vms(host: str, user: str, password: str, port=443) -> None:
         host (str): The IP address or hostname of the server
         user (str): The username for authentication
         password (str): The password of the user
-        port (int, optional): The port to use for the connection (default is 443)
+        port (int): The port to use for the connection (default is 443)
     """
-    context = ssl._create_unverified_context()
+    # context = ssl._create_unverified_context()
+    context = ssl.create_default_context()
+    # Only disable verification if explicitly configured
+    if not VERIFIED_SSL:
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
     try:
         si = SmartConnect(host=host, user=user, pwd=password, port=port, sslContext=context)
     except vim.fault.InvalidLogin as _:
-        print("Mot de passe incorrect")
+        print(error_message("Invalid credentials", 401))
         return
     except Exception as err:
-        print(err)
+        print(error_message(str(err)))
         return
     content = si.RetrieveContent()
 
     vms = {"vms": []}
     for datacenter in content.rootFolder.childEntity:
+        datacenter_name = datacenter.name
         vm_folder = datacenter.vmFolder
         vm_list = vm_folder.childEntity
         for vm in vm_list:
             if isinstance(vm, vim.VirtualMachine):
-                vms["vms"].append(to_json(vm))
-            else:
-                print(f"Element is not a VirtualMachine : {vm}")
+                vms["vms"].append(to_json(vm, datacenter_name))
     print(json_dumps(vms))
     Disconnect(si)
 

@@ -21,7 +21,13 @@ fi
 
 if ! docker ps --format '{{.Names}}' | grep -q '^python_app$'; then
     docker-compose up --build -d
-    sleep 3
+    echo "Waiting for container to be ready..."
+    for _ in {1..30}; do
+        if docker ps --format '{{.Names}}' | grep -q '^python_app$'; then
+            break
+        fi
+        sleep 1
+    done
 fi
 
 CMD="docker exec -i python_app python list_vm.py --ip \"$IP\" --user \"$USER\" --password \"$PASSWORD\""

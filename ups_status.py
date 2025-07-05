@@ -14,8 +14,16 @@ def get_ups_status(ups_name: str, host="localhost") -> dict:
         - "CHRG" for Charging, which means the power came back and the ups is recovering and charging its battery
     Args:
         ups_name (str): The name of the UPS
-        host (str, optional): The host to connect to. Defaults to "localhost"
-    """
+        host (str): The host to connect to. Defaults to "localhost"
+    Returns:
+        dict: Dictionary containing UPS status information
+    Raises:
+        ValueError: If ups_name is empty
+        subprocess.CalledProcessError: If upsc command fails
+     """
+    if not ups_name.strip():
+        raise ValueError("UPS name cannot be empty")
+
     output = command_run(["upsc", f"{ups_name}@{host}"], text=True)
     status_lines = output.strip().splitlines()
     status_dict = {}
