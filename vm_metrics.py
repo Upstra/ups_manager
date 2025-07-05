@@ -1,5 +1,6 @@
 import ssl
 from argparse import ArgumentParser
+from datetime import datetime
 from json import dumps as json_dumps
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
@@ -49,16 +50,63 @@ def get_vm_metrics(vm_name: str, datacenter_name: str, host: str, user: str, pas
 
     content = si.RetrieveContent()
     search_index = content.searchIndex
+    perf_manager = content.perfManager
 
-    for _ in range(100):
-        vm = search_index.FindByInventoryPath(f"{datacenter_name}/vm/{vm_name}")
-        if not vm:
-            print(error_message("VM not found", 404))
-            break
-        print(json_dumps(to_json(vm)))
-        sleep(1)
+    counters = {f"{c.groupInfo.key}.{c.nameInfo.key}.{c.rollupType}": c.key for c in perf_manager.perfCounter}
 
-    Disconnect(si)
+    wanted = [
+        'cpu.usage.average',
+        'cpu.usagemhz.average',
+        'mem.usage.average',
+        'mem.consumed.average',
+        'disk.usage.average',
+        'net.usage.average'
+    ]
+    metric_ids = [
+        vim.PerformanceManager.MetricId(counterId=counters[name], instance="")
+        for name in wanted if name in counters
+    ]
+    if not metric_ids:
+        print(error_message("No metrics where found", 400))
+        Disconnect(si)
+        return
+
+    try:
+        while True:
+            vm = search_index.FindByInventoryPath(f"{datacenter_name}/vm/{vm_name}")
+            if not vm:
+                print(error_message("VM not found", 404))
+                break
+
+            query = vim.PerformanceManager.QuerySpec(
+                entity=vm,
+                metricId=metric_ids,
+                intervalId=20,
+                maxSample=1
+            )
+            stats = perf_manager.QueryStats([query])
+
+            result = {
+                "timestamp": datetime.now().isoformat(),
+                "vmName": vm.name,
+                "powerState": vm.runtime.powerState,
+                "guestState": vm.guest.guestState,
+                "uptime": vm.summary.quickStats.uptimeSeconds,
+            }
+
+            if stats and stats[0].value:
+                for metric in stats[0].value:
+                    counter_info = next(c for c in perf_manager.perfCounter if c.key == metric.id.counterId)
+                    name = f"{counter_info.groupInfo.key}.{counter_info.nameInfo.key}.{counter_info.rollupType}"
+                    result[name] = metric.value[-1] if metric.value else 0
+
+            print(json_dumps(result, indent=2))
+            sleep(1)
+
+    except KeyboardInterrupt:
+        pass
+    finally:
+        Disconnect(si)
 
 
 if __name__ == "__main__":
