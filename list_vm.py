@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 import ssl
 
 
-VERIFIED_SSL = True
+VERIFIED_SSL = False
 
 
 def error_message(message: str, http_code = 400) -> str:
