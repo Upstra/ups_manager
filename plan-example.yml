@@ -1,0 +1,18 @@
+servers:
+  server:
+    name: server_name
+    ip: 172.1.2.3
+    destination: 172.2.3.4
+    vms:
+      shutdown:
+        order:
+          - vm1
+          - vm2
+          - vm3
+        delay: 60
+      restart:
+        order:
+          - vm3
+          - vm1
+          - vm2
+        delay: 60
