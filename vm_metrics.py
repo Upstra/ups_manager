@@ -46,9 +46,10 @@ def get_vm_metrics(vm_name: str, datacenter_name: str, host: str, user: str, pas
         print(error_message(str(err)))
         return
 
+    content = si.RetrieveContent()
+    search_index = content.searchIndex
+
     for _ in range(100):
-        content = si.RetrieveContent()
-        search_index = content.searchIndex
         vm = search_index.FindByInventoryPath(f"{datacenter_name}/vm/{vm_name}")
         if not vm:
             print(error_message("VM not found", 404))
