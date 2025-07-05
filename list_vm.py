@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 import ssl
 
 
-VERIFIED_SSL = False
+VERIFIED_SSL = True
 
 
 def error_message(message: str, http_code = 400) -> str:
@@ -27,7 +27,7 @@ def error_message(message: str, http_code = 400) -> str:
 
 def to_json(vm: vim.VirtualMachine, datacenter_name: str) -> dict[str, str | int | None]:
     """
-    Format VM data as json dictionary
+    Format VM data to a json dictionary
     Args:
         vm (vim.VirtualMachine): The VM object where data is retrieved
         datacenter_name (str): The name of the datacenter where the VM is stored for search function
