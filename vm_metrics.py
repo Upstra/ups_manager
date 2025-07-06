@@ -1,6 +1,6 @@
 from json import dumps as json_dumps
 from argparse import ArgumentParser
-from pyVmomi.vim.fault import InvalidLogin
+from pyVmomi import vim
 
 from vm_ware_connection import error_message, VMwareConnection, json_metrics_info
 
@@ -25,7 +25,7 @@ if __name__ == "__main__":
         else:
             print(error_message("VM not found", 404))
         conn.disconnect()
-    except InvalidLogin as _:
+    except vim.fault.InvalidLogin as _:
         print(error_message("Invalid credentials", 401))
     except Exception as err:
         print(error_message(str(err)))

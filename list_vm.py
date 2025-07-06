@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from pyVmomi.vim.fault import InvalidLogin
+from pyVmomi import vim
 
 from vm_ware_connection import VMwareConnection, error_message
 
@@ -17,7 +17,7 @@ if __name__ == "__main__":
     try:
         conn.connect(args.ip, args.user, args.password, port=args.port)
         conn.list_vm()
-    except InvalidLogin as _:
+    except vim.fault.InvalidLogin as _:
         print(error_message("Invalid credentials", 401))
     except Exception as err:
         print(error_message(str(err)))
