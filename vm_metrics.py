@@ -1,71 +1,6 @@
-import ssl
 from argparse import ArgumentParser
-from json import dumps as json_dumps
-from pyVim.connect import SmartConnect, Disconnect
-from pyVmomi import vim
 
-from list_vm import error_message
-
-
-def to_json(vm: vim.VirtualMachine) -> dict:
-    """
-    Format VM metrics data to a json dictionary
-    Args:
-        vm (vim.VirtualMachine): The VM object where metrics are retrieved
-    Returns:
-        dict: A dictionary formatted for json dumps
-    """
-    return {
-        "powerState": vm.runtime.powerState,
-        "guestState": vm.guest.guestState,
-        "connectionState": vm.runtime.connectionState,
-        "guestHeartbeatStatus": vm.guestHeartbeatStatus,
-        "overallStatus": vm.overallStatus,
-        "overallCpuUsage": vm.summary.quickStats.overallCpuUsage,
-        "maxCpuUsage": vm.runtime.maxCpuUsage,
-        "guestMemoryUsage": vm.summary.quickStats.guestMemoryUsage,
-        "maxMemoryUsage": vm.runtime.maxMemoryUsage,
-        "uptimeSeconds": vm.summary.quickStats.uptimeSeconds,
-        "usedStorage": vm.summary.storage.committed,
-        "totalStorage": vm.summary.storage.committed + vm.summary.storage.uncommitted,
-        "bootTime": vm.runtime.bootTime.isoformat() if vm.runtime.bootTime else "",
-        "isMigrating": vm.runtime.vmFailoverInProgress,
-        "swappedMemory": vm.summary.quickStats.swappedMemory
-    }
-
-
-def get_vm_metrics(vm_name: str, datacenter_name: str, host: str, user: str, password: str, port=443) -> None:
-    """
-    Print the metrics of a VM
-    Args:
-        vm_name (str): The name of the VM
-        datacenter_name (str): The name of the datacenter where the VM is located
-        host (str): The IP address or hostname of the server
-        user (str): The username for authentication
-        password (str): The password of the user
-        port (int): The port to use for the connection (default is 443)
-    """
-    context = ssl._create_unverified_context()
-
-    try:
-        si = SmartConnect(host=host, user=user, pwd=password, port=port, sslContext=context)
-    except vim.fault.InvalidLogin as _:
-        print(error_message("Invalid credentials", 401))
-        return
-    except Exception as err:
-        print(error_message(str(err)))
-        return
-
-    content = si.RetrieveContent()
-    search_index = content.searchIndex
-    vm = search_index.FindByInventoryPath(f"{datacenter_name}/vm/{vm_name}")
-    if not vm:
-        print(error_message("VM not found", 404))
-        Disconnect(si)
-        return
-
-    print(json_dumps(to_json(vm)))
-    Disconnect(si)
+from vm_ware_connection import error_message, VMwareConnection
 
 
 if __name__ == "__main__":
@@ -79,4 +14,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    get_vm_metrics(args.vm, args.datacenter, args.ip, args.user, args.password, args.port)
+    conn = VMwareConnection(args.ip, args.user, args.password, port=args.port)
+    vm = conn.get_vm(args.vm, args.datacenter)
+    if not vm:
+        print(error_message("VM not found", 404))
+    conn.disconnect()
