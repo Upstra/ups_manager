@@ -1,4 +1,4 @@
 #!/bin/bash
 
 source .venv/bin/activate
-python list_vm.py
+python vm_metrics.py
