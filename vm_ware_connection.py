@@ -18,7 +18,7 @@ def error_message(message: str, http_code = 400) -> str:
             "message": message,
             "httpCode": http_code
         }
-    })
+    }, indent=2)
 
 def json_vm_info(vm: vim.VirtualMachine, datacenter_name: str) -> dict:
     """

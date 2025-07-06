@@ -1,4 +1,4 @@
-import json
+from json import dumps as json_dumps
 from argparse import ArgumentParser
 
 from vm_ware_connection import error_message, VMwareConnection, json_metrics_info
@@ -17,7 +17,7 @@ if __name__ == "__main__":
     conn = VMwareConnection(args.ip, args.user, args.password, port=args.port)
     vm = conn.get_vm(args.vm, args.datacenter)
     if vm:
-        print(json.dumps(json_metrics_info(vm), indent=2))
+        print(json_dumps(json_metrics_info(vm), indent=2))
     else:
         print(error_message("VM not found", 404))
     conn.disconnect()
