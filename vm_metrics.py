@@ -1,10 +1,8 @@
 import ssl
 from argparse import ArgumentParser
-from datetime import datetime
 from json import dumps as json_dumps
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
-from time import sleep
 
 from list_vm import error_message
 
@@ -23,11 +21,11 @@ def to_json(vm: vim.VirtualMachine) -> dict:
         "connectionState": vm.runtime.connectionState,
         "guestHeartbeatStatus": vm.guestHeartbeatStatus,
         "overallStatus": vm.overallStatus,
-        "overallCpuUsage": vm.summary.quickStats.overallCpuUsage,
+        "overallCpuUsage": vm.summary.quick_stats.overallCpuUsage,
         "maxCpuUsage": vm.runtime.maxCpuUsage,
-        "guestMemoryUsage": vm.summary.quickStats.guestMemoryUsage,
+        "guestMemoryUsage": vm.summary.quick_stats.guestMemoryUsage,
         "maxMemoryUsage": vm.runtime.maxMemoryUsage,
-        "uptimeSeconds": vm.summary.quickStats.uptimeSeconds,
+        "uptimeSeconds": vm.summary.quick_stats.uptimeSeconds,
         "usedStorage": vm.summary.storage.committed,
         "totalStorage": vm.summary.storage.committed + vm.summary.storage.uncommitted,
         "bootTime": vm.runtime.bootTime.isoformat() if vm.runtime.bootTime else "",
@@ -36,7 +34,17 @@ def to_json(vm: vim.VirtualMachine) -> dict:
     }
 
 
-def get_vm_metrics(vm_name: str, datacenter_name: str, host: str, user: str, password: str, port=443):
+def get_vm_metrics(vm_name: str, datacenter_name: str, host: str, user: str, password: str, port=443) -> None:
+    """
+    Print the metrics of a VM
+    Args:
+        vm_name (str): The name of the VM
+        datacenter_name (str): The name of the datacenter where the VM is located
+        host (str): The IP address or hostname of the server
+        user (str): The username for authentication
+        password (str): The password of the user
+        port (int): The port to use for the connection (default is 443)
+    """
     context = ssl._create_unverified_context()
 
     try:
@@ -50,63 +58,14 @@ def get_vm_metrics(vm_name: str, datacenter_name: str, host: str, user: str, pas
 
     content = si.RetrieveContent()
     search_index = content.searchIndex
-    perf_manager = content.perfManager
-
-    counters = {f"{c.groupInfo.key}.{c.nameInfo.key}.{c.rollupType}": c.key for c in perf_manager.perfCounter}
-
-    wanted = [
-        'cpu.usage.average',
-        'cpu.usagemhz.average',
-        'mem.usage.average',
-        'mem.consumed.average',
-        'disk.usage.average',
-        'net.usage.average'
-    ]
-    metric_ids = [
-        vim.PerformanceManager.MetricId(counterId=counters[name], instance="")
-        for name in wanted if name in counters
-    ]
-    if not metric_ids:
-        print(error_message("No metrics where found", 400))
+    vm = search_index.FindByInventoryPath(f"{datacenter_name}/vm/{vm_name}")
+    if not vm:
+        print(error_message("VM not found", 404))
         Disconnect(si)
         return
 
-    try:
-        while True:
-            vm = search_index.FindByInventoryPath(f"{datacenter_name}/vm/{vm_name}")
-            if not vm:
-                print(error_message("VM not found", 404))
-                break
-
-            query = vim.PerformanceManager.QuerySpec(
-                entity=vm,
-                metricId=metric_ids,
-                intervalId=20,
-                maxSample=1
-            )
-            stats = perf_manager.QueryStats([query])
-
-            result = {
-                "timestamp": datetime.now().isoformat(),
-                "vmName": vm.name,
-                "powerState": vm.runtime.powerState,
-                "guestState": vm.guest.guestState,
-                "uptime": vm.summary.quickStats.uptimeSeconds,
-            }
-
-            if stats and stats[0].value:
-                for metric in stats[0].value:
-                    counter_info = next(c for c in perf_manager.perfCounter if c.key == metric.id.counterId)
-                    name = f"{counter_info.groupInfo.key}.{counter_info.nameInfo.key}.{counter_info.rollupType}"
-                    result[name] = metric.value[-1] if metric.value else 0
-
-            print(json_dumps(result, indent=2))
-            sleep(1)
-
-    except KeyboardInterrupt:
-        pass
-    finally:
-        Disconnect(si)
+    print(json_dumps(to_json(vm)))
+    Disconnect(si)
 
 
 if __name__ == "__main__":
