@@ -130,7 +130,7 @@ class VMwareConnection:
             for vm in vm_list:
                 if isinstance(vm, vim.VirtualMachine):
                     vms["vms"].append(json_vm_info(vm, datacenter_name))
-        print(json_dumps(vms))
+        print(json_dumps(vms, indent=2))
 
     def get_vm(self, vm_name: str, datacenter_name: str) -> vim.VirtualMachine:
         """
