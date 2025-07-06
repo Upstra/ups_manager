@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
+from pyVmomi.vim.fault import InvalidLogin
 
-from vm_ware_connection import VMwareConnection
+from vm_ware_connection import VMwareConnection, error_message
 
 
 if __name__ == "__main__":
@@ -12,6 +13,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    conn = VMwareConnection(args.ip, args.user, args.password, port=args.port)
-    conn.list_vm()
-    conn.disconnect()
+    conn = VMwareConnection()
+    try:
+        conn.connect(args.ip, args.user, args.password, port=args.port)
+        conn.list_vm()
+    except InvalidLogin as _:
+        print(error_message("Invalid credentials", 401))
+    except Exception as err:
+        print(error_message(str(err)))
+    finally:
+        conn.disconnect()

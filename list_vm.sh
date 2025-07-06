@@ -19,7 +19,14 @@ if [[ -z "$IP" || -z "$USER" || -z "$PASSWORD" ]]; then
     exit 1
 fi
 
-source .venv/bin/activate
+if [ ! -f .venv/bin/activate ]; then
+    echo "ERROR: Virtual environment not found at .venv/bin/activate"
+    exit 1
+fi
+if ! source .venv/bin/activate; then
+    echo "ERROR: Failed to activate virtual environment"
+    exit 1
+fi
 
 CMD="python list_vm.py --ip \"$IP\" --user \"$USER\" --password \"$PASSWORD\""
 if [[ -n "$PORT" ]]; then

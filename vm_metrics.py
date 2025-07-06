@@ -1,7 +1,9 @@
 from json import dumps as json_dumps
 from argparse import ArgumentParser
+from pyVmomi.vim.fault import InvalidLogin
 
 from vm_ware_connection import error_message, VMwareConnection, json_metrics_info
+
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Lister les VM d'un serveur")
@@ -14,10 +16,18 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    conn = VMwareConnection(args.ip, args.user, args.password, port=args.port)
-    vm = conn.get_vm(args.vm, args.datacenter)
-    if vm:
-        print(json_dumps(json_metrics_info(vm), indent=2))
-    else:
-        print(error_message("VM not found", 404))
-    conn.disconnect()
+    conn = VMwareConnection()
+    try:
+        conn.connect(args.ip, args.user, args.password, port=args.port)
+        vm = conn.get_vm(args.vm, args.datacenter)
+        if vm:
+            print(json_dumps(json_metrics_info(vm), indent=2))
+        else:
+            print(error_message("VM not found", 404))
+        conn.disconnect()
+    except InvalidLogin as _:
+        print(error_message("Invalid credentials", 401))
+    except Exception as err:
+        print(error_message(str(err)))
+    finally:
+        conn.disconnect()

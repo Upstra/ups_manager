@@ -32,10 +32,10 @@ def json_vm_info(vm: vim.VirtualMachine, datacenter_name: str) -> dict:
     return {
         "name": vm.name,
         "datacenter": datacenter_name,
-        "hostName": vm.guest.hostName if vm.guest.hostName else "",
-        "ip": vm.summary.guest.ipAddress if vm.summary.guest.ipAddress else "",
+        "hostName": vm.guest.hostName if vm.guest and vm.guest.hostName else "",
+        "ip": vm.summary.guest.ipAddress if vm.summary.guest and vm.summary.guest.ipAddress else "",
         "guestOs": vm.config.guestFullName,
-        "guestFamily": vm.guest.guestFamily,
+        "guestFamily": vm.guest.guestFamily if vm.guest else "",
         "version": vm.config.version,
         "createDate": vm.config.createDate.isoformat() if vm.config.createDate else "",
         "numCoresPerSocket": vm.config.hardware.numCoresPerSocket,
@@ -53,62 +53,46 @@ def json_metrics_info(vm: vim.VirtualMachine) -> dict:
     """
     return {
         "powerState": vm.runtime.powerState,
-        "guestState": vm.guest.guestState,
+        "guestState": vm.guest.guestState if vm.guest else "",
         "connectionState": vm.runtime.connectionState,
         "guestHeartbeatStatus": vm.guestHeartbeatStatus,
         "overallStatus": vm.overallStatus,
-        "overallCpuUsage": vm.summary.quickStats.overallCpuUsage,
+        "overallCpuUsage": vm.summary.quickStats.overallCpuUsage if vm.summary.quickStats else 0,
         "maxCpuUsage": vm.runtime.maxCpuUsage,
-        "guestMemoryUsage": vm.summary.quickStats.guestMemoryUsage,
+        "guestMemoryUsage": vm.summary.quickStats.guestMemoryUsage if vm.summary.quickStats else 0,
         "maxMemoryUsage": vm.runtime.maxMemoryUsage,
-        "uptimeSeconds": vm.summary.quickStats.uptimeSeconds,
-        "usedStorage": vm.summary.storage.committed,
-        "totalStorage": vm.summary.storage.committed + vm.summary.storage.uncommitted,
+        "uptimeSeconds": vm.summary.quickStats.uptimeSeconds if vm.summary.quickStats else 0,
+        "usedStorage": vm.summary.storage.committed if vm.summary.storage else 0,
+        "totalStorage": (vm.summary.storage.committed + vm.summary.storage.uncommitted) if vm.summary.storage else 0,
         "bootTime": vm.runtime.bootTime.isoformat() if vm.runtime.bootTime else "",
         "isMigrating": vm.runtime.vmFailoverInProgress,
-        "swappedMemory": vm.summary.quickStats.swappedMemory
+        "swappedMemory": vm.summary.quickStats.swappedMemory if vm.summary.quickStats else 0
     }
 
 
 class VMwareConnection:
-    def __init__(self, host: str, user: str, password: str, port=443, verified_ssl=False):
-        """
-        Create an object to connect to a distant server containing a VMware architecture and to help manipulate VMs
-        stored on this server
-        Args:
-            host (str): The IP address or hostname of the server
-            user (str): The username for authentication
-            password (str): The password of the user
-            port (int): The port to use for the connection (default to 443)
-            verified_ssl (bool): Whether or not to verify the SSL certificate (default to False)
-        """
+    def __init__(self):
         self._content = None
         self._si = None
-        self._connect(host, user, password, port, verified_ssl)
 
-    def _connect(self, host: str, user: str, password: str, port: int, verified_ssl: bool):
+    def connect(self, host: str, user: str, password: str, port=443, verified_ssl=False):
         """
         Connect to the server where VMs are located
         Args:
             host (str): The IP address or hostname of the server
             user (str): The username for authentication
             password (str): The password of the user
-            port (int): The port to use for the connection
-            verified_ssl (bool): Whether or not to verify the SSL certificate
+            port (int): The port to use for the connection (default to 443)
+            verified_ssl (bool): Whether or not to verify the SSL certificate (default to False)
+        Raises:
+            vim.fault.InvalidLogin: If credentials are invalid
++           Exception: If connection fails for any reason
         """
         context = ssl.create_default_context()
         if not verified_ssl:
             context.check_hostname = False
             context.verify_mode = ssl.CERT_NONE
-
-        try:
-            self._si = SmartConnect(host=host, user=user, pwd=password, port=port, sslContext=context)
-        except vim.fault.InvalidLogin as _:
-            print(error_message("Invalid credentials", 401))
-            return
-        except Exception as err:
-            print(error_message(str(err)))
-            return
+        self._si = SmartConnect(host=host, user=user, pwd=password, port=port, sslContext=context)
         self._content = self._si.RetrieveContent()
 
     def disconnect(self):
