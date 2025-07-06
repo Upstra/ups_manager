@@ -1,11 +1,14 @@
+from json import dumps as json_dumps
 from argparse import ArgumentParser
 from pyVmomi import vim
 
-from vm_ware_connection import VMwareConnection, error_message
+from vm_ware_connection import error_message, VMwareConnection, json_metrics_info
 
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Lister les VM d'un serveur")
+    parser.add_argument("--vm", required=True, help="Le nom de la VM")
+    parser.add_argument("--datacenter", required=True, help="Le nom du datacenter où est stocké la VM")
     parser.add_argument("--ip", required=True, help="Adresse IP du serveur")
     parser.add_argument("--user", required=True, help="Nom d'utilisateur")
     parser.add_argument("--password", required=True, help="Mot de passe")
@@ -16,7 +19,12 @@ if __name__ == "__main__":
     conn = VMwareConnection()
     try:
         conn.connect(args.ip, args.user, args.password, port=args.port)
-        conn.list_vm()
+        vm = conn.get_vm(args.vm, args.datacenter)
+        if vm:
+            print(json_dumps(json_metrics_info(vm), indent=2))
+        else:
+            print(error_message("VM not found", 404))
+        conn.disconnect()
     except vim.fault.InvalidLogin as _:
         print(error_message("Invalid credentials", 401))
     except Exception as err:
