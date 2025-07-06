@@ -9,13 +9,13 @@ from time import sleep
 from list_vm import error_message
 
 
-def to_json(vm: vim.VirtualMachine) -> dict[str, str | int | None]:
+def to_json(vm: vim.VirtualMachine) -> dict:
     """
     Format VM metrics data to a json dictionary
     Args:
         vm (vim.VirtualMachine): The VM object where metrics are retrieved
     Returns:
-        dict[str, str | int | None]: A dictionary formatted for json dumps
+        dict: A dictionary formatted for json dumps
     """
     return {
         "powerState": vm.runtime.powerState,
