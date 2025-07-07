@@ -63,7 +63,7 @@ def load_plan_from_yaml(file_path: str) -> list[Server]:
                 ip=server['server']['ip'],
                 host=server['server']['host'],
                 password=server['server']['password'],
-                destination=server['server']['destination'],
+                destination=server['server']['destination'] if 'destination' in server['server'] else None,
                 vms=VMs(
                     shutdown=VMAction(
                         order=[VM(name=vm['vm']['name'], datacenter=vm['vm']['datacenter']) for vm in server['server']['vms']['shutdown']['order']],
