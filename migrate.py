@@ -2,12 +2,18 @@ from yaml import safe_load as yaml_load
 from time import sleep
 from argparse import ArgumentParser
 from dataclasses import dataclass
-from typing import List
+
+from vm_ware_connection import VMwareConnection
 
 
 @dataclass
+class VM:
+    name: str
+    datacenter: str
+
+@dataclass
 class VMAction:
-    order: List[str]
+    order: list[VM]
     delay: int
 
 @dataclass
@@ -19,6 +25,8 @@ class VMs:
 class Server:
     name: str
     ip: str
+    host: str
+    password: str
     destination: str
     vms: VMs
 
@@ -52,48 +60,83 @@ def load_plan_from_yaml(file_path: str) -> list[Server]:
             Server(
                 name=server['name'],
                 ip=server['ip'],
+                host=server['host'],
+                password=server['password'],
                 destination=server['destination'],
                 vms=VMs(
-                    shutdown=VMAction(**server['vms']['shutdown']),
-                    restart=VMAction(**server['vms']['restart'])
+                    shutdown=VMAction(
+                        order=[VM(name=vm['vm']['name'], datacenter=vm['vm']['datacenter']) for vm in server['vms']['shutdown']['order']],
+                        delay=server['vms']['shutdown']['delay']
+                    ),
+                    restart=VMAction(
+                        order=[VM(name=vm['vm']['name'], datacenter=vm['vm']['datacenter']) for vm in server['vms']['restart']['order']],
+                        delay=server['vms']['restart']['delay']
+                    ),
                 )
             )
         )
     return servers
 
 
-def restart_plan(servers: list[Server]) -> None:
+def turn_on_vms(servers: list[Server]):
     """
     Launch the restart plan of all servers specified in `servers` to go back to the initial state
     Args:
         servers (list[Server]): The migration plan for each server
     """
+    conn = VMwareConnection()
+
     for server in servers:
-        print(f"Migration du serveur {server.name}")
+        print(f"Allumage du serveur {server.name}")
         ip = server.ip
-        destination = server.destination
+        user = server.host
+        password = server.password
         vms = server.vms.restart.order
         start_delay = server.vms.restart.delay
-        for vm in vms:
-            print(f"Power ON: {vm}")
-            sleep(start_delay)
+        try:
+            conn.connect(ip, user, password)
+            vms_found = conn.get_all_vms()
+            for vm_info in vms:
+                for vm, datacenter in vms_found:
+                    if vm.name == vm_info.name and datacenter == vm_info.datacenter:
+                        vm.PowerOn()
+                        sleep(start_delay)
+                        break
+        except Exception as err:
+            print(err)
+        finally:
+            conn.disconnect()
 
 
-def shutdown_plan(servers: list[Server]) -> None:
+def turn_off_vms(servers: list[Server]):
     """
     Launch the shutdown plan of all servers specified in `servers` to migrate each vm to a distant server
     Args:
         servers (list[Server]): The migration plan for each server
     """
+    conn = VMwareConnection()
+
     for server in servers:
-        print(f"Migration du serveur {server.name}")
+        print(f"Extinction du serveur {server.name}")
         ip = server.ip
-        destination = server.destination
+        user = server.host
+        password = server.password
         vms = server.vms.shutdown.order
         stop_delay = server.vms.shutdown.delay
-        for vm in vms:
-            print(f"Power OFF: {vm}")
-            sleep(stop_delay)
+        try:
+            conn.connect(ip, user, password)
+            vms_found = conn.get_all_vms()
+            for vm_info in vms:
+                for vm, datacenter in vms_found:
+                    if vm.name == vm_info.name and datacenter == vm_info.datacenter:
+                        vm.PowerOff()
+                        sleep(stop_delay)
+                        break
+        except Exception as err:
+            print(err)
+        finally:
+            conn.disconnect()
+
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Migration des vms")
@@ -108,9 +151,9 @@ if __name__ == "__main__":
 
     if args.shutdown:
         print("Lancement du plan de migration...")
-        shutdown_plan(servers)
+        turn_off_vms(servers)
     elif args.restart:
         print("Lancement du plan de redémarrage...")
-        restart_plan(servers)
+        turn_on_vms(servers)
     else:
         print("ERREUR: Utilisez --shutdown ou --restart")

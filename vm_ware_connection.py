@@ -11,7 +11,7 @@ def error_message(message: str, http_code = 400) -> str:
         message (str): The message explaining the error
         http_code (int): The HTTP response code corresponding to the error (defaults to 400)
     Returns:
-        str: A json dump of the error message
+        str: A string formatted json dump of the error message
     """
     return json_dumps({
         "error": {
@@ -20,38 +20,40 @@ def error_message(message: str, http_code = 400) -> str:
         }
     }, indent=2)
 
-def json_vm_info(vm: vim.VirtualMachine, datacenter_name: str) -> dict:
+def json_vms_info(vms: list[tuple[vim.VirtualMachine, str]]) -> str:
     """
-    Format VM data to a json dictionary
+    Format VMs data to a json dictionary
     Args:
-        vm (vim.VirtualMachine): The VM object where data is retrieved
-        datacenter_name (str): The name of the datacenter where the VM is stored for search function
+        vms (list[tuple[vim.VirtualMachine, str]]): A list of VM object and name of the datacenter
     Returns:
-        dict: A dictionary formatted for json dumps
+        str: A string formatted json dump of the vms data
     """
-    return {
-        "name": vm.name,
-        "datacenter": datacenter_name,
-        "hostName": vm.guest.hostName if vm.guest and vm.guest.hostName else "",
-        "ip": vm.summary.guest.ipAddress if vm.summary.guest and vm.summary.guest.ipAddress else "",
-        "guestOs": vm.config.guestFullName,
-        "guestFamily": vm.guest.guestFamily if vm.guest else "",
-        "version": vm.config.version,
-        "createDate": vm.config.createDate.isoformat() if vm.config.createDate else "",
-        "numCoresPerSocket": vm.config.hardware.numCoresPerSocket,
-        "numCPU": vm.config.hardware.numCPU,
-        "vmPathName": vm.summary.config.vmPathName
-    }
+    json_vms = {"vms": []}
+    for vm, datacenter_name in vms:
+        json_vms["vms"].append({
+            "name": vm.name,
+            "datacenter": datacenter_name,
+            "hostName": vm.guest.hostName if vm.guest and vm.guest.hostName else "",
+            "ip": vm.summary.guest.ipAddress if vm.summary.guest and vm.summary.guest.ipAddress else "",
+            "guestOs": vm.config.guestFullName,
+            "guestFamily": vm.guest.guestFamily if vm.guest else "",
+            "version": vm.config.version,
+            "createDate": vm.config.createDate.isoformat() if vm.config.createDate else "",
+            "numCoresPerSocket": vm.config.hardware.numCoresPerSocket,
+            "numCPU": vm.config.hardware.numCPU,
+            "vmPathName": vm.summary.config.vmPathName
+        })
+    return json_dumps(json_vms, indent=2)
 
-def json_metrics_info(vm: vim.VirtualMachine) -> dict:
+def json_metrics_info(vm: vim.VirtualMachine) -> str:
     """
     Format VM metrics data to a json dictionary
     Args:
         vm (vim.VirtualMachine): The VM object where metrics are retrieved
     Returns:
-        dict: A dictionary formatted for json dumps
+        str: A string formatted json dump of the metrics data
     """
-    return {
+    return json_dumps({
         "powerState": vm.runtime.powerState,
         "guestState": vm.guest.guestState if vm.guest else "",
         "connectionState": vm.runtime.connectionState,
@@ -67,7 +69,7 @@ def json_metrics_info(vm: vim.VirtualMachine) -> dict:
         "bootTime": vm.runtime.bootTime.isoformat() if vm.runtime.bootTime else "",
         "isMigrating": vm.runtime.vmFailoverInProgress,
         "swappedMemory": vm.summary.quickStats.swappedMemory if vm.summary.quickStats else 0
-    }
+    }, indent=2)
 
 
 class VMwareConnection:
@@ -86,7 +88,7 @@ class VMwareConnection:
             verified_ssl (bool): Whether or not to verify the SSL certificate (default to False)
         Raises:
             vim.fault.InvalidLogin: If credentials are invalid
-+           Exception: If connection fails for any reason
+            Exception: If connection fails for any reason
         """
         context = ssl.create_default_context()
         if not verified_ssl:
@@ -102,19 +104,23 @@ class VMwareConnection:
         self._content = None
         self._si = None
 
-    def list_vm(self):
-        """ Print a list of virtual machines from a server host """
+    def get_all_vms(self) -> list[tuple[vim.VirtualMachine, str]]:
+        """
+        Get a list of VMs stored in the server
+        Returns:
+            list[tuple[vim.VirtualMachine, str]]: The list of VM object with corresponding datacenter name
+        """
+        vms = []
         if not self._si:
-            return
-        vms = {"vms": []}
+            return vms
         for datacenter in self._content.rootFolder.childEntity:
             datacenter_name = datacenter.name
             vm_folder = datacenter.vmFolder
             vm_list = vm_folder.childEntity
             for vm in vm_list:
                 if isinstance(vm, vim.VirtualMachine):
-                    vms["vms"].append(json_vm_info(vm, datacenter_name))
-        print(json_dumps(vms, indent=2))
+                    vms.append((vm, datacenter_name))
+        return vms
 
     def get_vm(self, vm_name: str, datacenter_name: str) -> vim.VirtualMachine:
         """

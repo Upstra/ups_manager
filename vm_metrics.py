@@ -1,4 +1,3 @@
-from json import dumps as json_dumps
 from argparse import ArgumentParser
 from pyVmomi import vim
 
@@ -21,10 +20,9 @@ if __name__ == "__main__":
         conn.connect(args.ip, args.user, args.password, port=args.port)
         vm = conn.get_vm(args.vm, args.datacenter)
         if vm:
-            print(json_dumps(json_metrics_info(vm), indent=2))
+            print(json_metrics_info(vm))
         else:
             print(error_message("VM not found", 404))
-        conn.disconnect()
     except vim.fault.InvalidLogin as _:
         print(error_message("Invalid credentials", 401))
     except Exception as err:

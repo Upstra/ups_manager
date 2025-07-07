@@ -1,8 +1,7 @@
 from argparse import ArgumentParser
 from pyVmomi import vim
 
-from vm_ware_connection import VMwareConnection, error_message
-
+from vm_ware_connection import VMwareConnection, error_message, json_vms_info
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Lister les VM d'un serveur")
@@ -16,7 +15,8 @@ if __name__ == "__main__":
     conn = VMwareConnection()
     try:
         conn.connect(args.ip, args.user, args.password, port=args.port)
-        conn.list_vm()
+        vms = conn.get_all_vms()
+        print(json_vms_info(vms))
     except vim.fault.InvalidLogin as _:
         print(error_message("Invalid credentials", 401))
     except Exception as err:

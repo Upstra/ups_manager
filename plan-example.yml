@@ -2,17 +2,31 @@ servers:
   server:
     name: server_name
     ip: 172.1.2.3
+    host: server_host
+    password: server_password
     destination: 172.2.3.4
     vms:
       shutdown:
         order:
-          - vm1
-          - vm2
-          - vm3
+          - vm:
+              name: vm1
+              datacenter: dc
+          - vm:
+              name: vm2
+              datacenter: dc
+          - vm:
+              name: vm3
+              datacenter: dc
         delay: 60
       restart:
         order:
-          - vm3
-          - vm1
-          - vm2
+          - vm:
+              name: vm3
+              datacenter: dc
+          - vm:
+              name: vm1
+              datacenter: dc
+          - vm:
+              name: vm2
+              datacenter: dc
         delay: 60

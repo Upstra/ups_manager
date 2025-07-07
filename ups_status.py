@@ -1,80 +1,26 @@
 from configparser import ConfigParser
-from time import sleep, time
-from subprocess import check_output as command_run
-from os.path import join as path_join
-import logging
+from time import sleep
 
 
-def get_ups_status(ups_name: str, host="localhost") -> dict:
-    """
-    Get the current status of an UPS server. The status is eather:
-        - "OL" for On Line, which means there is no power failure
-        - "OB" for On Battery, which means the ups doesn't receive power anymore, so there is a power failure
-        - "LB" for Low Battery, which means the ups will shutdown soon and stop giving power
-        - "CHRG" for Charging, which means the power came back and the ups is recovering and charging its battery
-    Args:
-        ups_name (str): The name of the UPS
-        host (str): The host to connect to. Defaults to "localhost"
-    Returns:
-        dict: Dictionary containing UPS status information
-    Raises:
-        ValueError: If ups_name is empty
-        subprocess.CalledProcessError: If upsc command fails
-     """
-    if not ups_name.strip():
-        raise ValueError("UPS name cannot be empty")
+def last_ups_status(log_file_path: str):
+    with open(log_file_path, "r") as f:
+        lines = f.readlines()
 
-    output = command_run(["upsc", f"{ups_name}@{host}"], text=True)
-    status_lines = output.strip().splitlines()
-    status_dict = {}
-    for line in status_lines:
-        if ":" in line:
-            key, value = line.split(":", 1)
-            status_dict[key.strip()] = value.strip()
-    return status_dict
+    for line in reversed(lines):
+        if "OB" in line.lower():
+            # On Battery
+            continue
+        elif "OL" in line.lower():
+            # On Line
+            continue
 
 
 if __name__ == "__main__":
     ini = ConfigParser()
     ini.read('config.ini')
-    ups_name = "upstra"
+    ups_log_file = ini['ups']['log_file']
     status_delay = int(ini['ups']['status_delay'])
-    update_delay = int(ini['ups']['update_delay'])
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-        handlers=[
-            logging.FileHandler(path_join("logs", "ups_status.log"), mode='a', encoding='utf-8'),
-            logging.StreamHandler() # Affichage dans la console
-        ]
-    )
-    logger = logging.getLogger(ups_name)
-
-    start_time = time()
-    last_status = ""
 
     while True:
-        try:
-            status = get_ups_status(ups_name)
-            ups_status = status.get("ups.status", "Inconnu")
-        except Exception as e:
-            message = f"Erreur : {e}"
-            if last_status != message:
-                last_status = message
-                logger.error(message)
-            sleep(status_delay)
-            continue
-
-        if ups_status != last_status:
-            if "OL" in ups_status:
-                logger.info("Onduleur sur secteur (On Line)")
-            elif "OB" in ups_status:
-                logger.warning("Onduleur sur batterie (On Battery)")
-            elif "LB" in ups_status:
-                logger.critical("Onduleur sur batterie critique (Low Battery)")
-            elif "CHRG" in ups_status:
-                logger.info("Onduleur en charge")
-            else:
-                logger.error("Statut inconnu ou non accessible")
+        print(last_ups_status(ups_log_file))
         sleep(status_delay)
