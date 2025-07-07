@@ -2,6 +2,7 @@ from yaml import safe_load as yaml_load
 from time import sleep
 from argparse import ArgumentParser
 from dataclasses import dataclass
+from os.path import join as path_join
 
 from vm_ware_connection import VMwareConnection
 
@@ -58,18 +59,18 @@ def load_plan_from_yaml(file_path: str) -> list[Server]:
     for server in data:
         servers.append(
             Server(
-                name=server['name'],
-                ip=server['ip'],
-                host=server['host'],
-                password=server['password'],
-                destination=server['destination'],
+                name=server['server']['name'],
+                ip=server['server']['ip'],
+                host=server['server']['host'],
+                password=server['server']['password'],
+                destination=server['server']['destination'],
                 vms=VMs(
                     shutdown=VMAction(
-                        order=[VM(name=vm['vm']['name'], datacenter=vm['vm']['datacenter']) for vm in server['vms']['shutdown']['order']],
+                        order=[VM(name=vm['vm']['name'], datacenter=vm['vm']['datacenter']) for vm in server['server']['vms']['shutdown']['order']],
                         delay=server['vms']['shutdown']['delay']
                     ),
                     restart=VMAction(
-                        order=[VM(name=vm['vm']['name'], datacenter=vm['vm']['datacenter']) for vm in server['vms']['restart']['order']],
+                        order=[VM(name=vm['vm']['name'], datacenter=vm['vm']['datacenter']) for vm in server['server']['vms']['restart']['order']],
                         delay=server['vms']['restart']['delay']
                     ),
                 )
@@ -157,7 +158,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    servers = load_plan_from_yaml(args.plan)
+    servers = load_plan_from_yaml(path_join("plans", args.plan))
 
     if args.shutdown:
         print("Lancement du plan de migration...")
