@@ -29,7 +29,7 @@ def json_vms_info(vms: list[vim.VirtualMachine]) -> str:
         str: A string formatted json dump of the vms data
     """
     json_vms = {"vms": []}
-    for vm, datacenter_name in vms:
+    for vm in vms:
         json_vms["vms"].append({
             "name": vm.name,
             "uuid": vm.config.uuid,
