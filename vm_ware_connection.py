@@ -136,3 +136,12 @@ class VMwareConnection:
         search_index = self._content.searchIndex
         vm = search_index.FindByInventoryPath(f"{datacenter_name}/vm/{vm_name}")
         return vm
+
+    def get_host_system(self, datacenter_name: str) -> vim.HostSystem:
+        if not self._si:
+            return None
+        for datacenter in self._content.rootFolder.childEntity:
+            if datacenter.name == datacenter_name:
+                target_host = datacenter.hostFolder.childEntity[0].host[0]
+                return target_host
+        return None

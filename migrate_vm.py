@@ -1,0 +1,43 @@
+from argparse import ArgumentParser
+from time import sleep
+from pyVmomi import vim
+from pyVim.task import WaitForTask
+
+from vm_ware_connection import VMwareConnection, json_metrics_info
+
+
+if __name__ == "__main__":
+    parser = ArgumentParser(description="Migrer une VM")
+    parser.add_argument("--vm", required=True, help="Le nom de la VM")
+    parser.add_argument("--datacenter", required=True, help="Le nom du datacenter où est stocké la VM")
+    parser.add_argument("--ip", required=True, help="Adresse IP du serveur")
+    parser.add_argument("--user", required=True, help="Nom d'utilisateur")
+    parser.add_argument("--password", required=True, help="Mot de passe")
+    parser.add_argument("--port", type=int, default=443, help="Port du serveur")
+
+    args = parser.parse_args()
+
+    conn = VMwareConnection()
+    try:
+        conn.connect(args.ip, args.user, args.password, port=args.port)
+        vm = conn.get_vm(args.vm, args.datacenter)
+        if vm:
+            print(json_metrics_info(vm))
+            print("Power Off...")
+            task = vm.PowerOff()
+            WaitForTask(task)
+            target_host = conn.get_host_system(args.datacenter)
+            target_resource_pool = target_host.parent.resourcePool
+            vm.Migrate(
+                pool=target_resource_pool,
+                host=target_host,
+                priority=vim.VirtualMachine.MovePriority.defaultPriority
+            )
+            sleep(10)
+            print(json_metrics_info(vm))
+        else:
+            print("VM not found")
+    except Exception as err:
+        print(err)
+    finally:
+        conn.disconnect()
