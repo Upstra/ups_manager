@@ -1,11 +1,11 @@
 from argparse import ArgumentParser
-from pyVmomi import vim
+from time import sleep
 
-from vm_ware_connection import error_message, VMwareConnection, json_metrics_info
+from vm_ware_connection import VMwareConnection, json_metrics_info
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser(description="Récupérer les métriques d'une VM")
+    parser = ArgumentParser(description="Allumer une VM")
     parser.add_argument("--vm", required=True, help="Le nom de la VM")
     parser.add_argument("--datacenter", required=True, help="Le nom du datacenter où est stocké la VM")
     parser.add_argument("--ip", required=True, help="Adresse IP du serveur")
@@ -21,11 +21,13 @@ if __name__ == "__main__":
         vm = conn.get_vm(args.vm, args.datacenter)
         if vm:
             print(json_metrics_info(vm))
+            print("Power On...")
+            vm.PowerOn()
+            sleep(10)
+            print(json_metrics_info(vm))
         else:
-            print(error_message("VM not found", 404))
-    except vim.fault.InvalidLogin as _:
-        print(error_message("Invalid credentials", 401))
+            print("VM not found")
     except Exception as err:
-        print(error_message(str(err)))
+        print(err)
     finally:
         conn.disconnect()
