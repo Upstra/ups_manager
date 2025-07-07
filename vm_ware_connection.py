@@ -112,7 +112,10 @@ class VMwareConnection:
         """
         vms = []
         if not self._si:
+            print("SmartConnect failed")
             return vms
+        print(self._content)
+        print(self._content.rootFolder)
         for datacenter in self._content.rootFolder.childEntity:
             datacenter_name = datacenter.name
             vm_folder = datacenter.vmFolder
@@ -120,6 +123,8 @@ class VMwareConnection:
             for vm in vm_list:
                 if isinstance(vm, vim.VirtualMachine):
                     vms.append((vm, datacenter_name))
+                else:
+                    print(f"Skipping VM {vm}")
         return vms
 
     def get_vm(self, vm_name: str, datacenter_name: str) -> vim.VirtualMachine:
