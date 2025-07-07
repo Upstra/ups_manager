@@ -97,11 +97,16 @@ def turn_on_vms(servers: list[Server]):
             conn.connect(ip, user, password)
             vms_found = conn.get_all_vms()
             for vm_info in vms:
+                is_found = False
                 for vm, datacenter in vms_found:
                     if vm.name == vm_info.name and datacenter == vm_info.datacenter:
+                        print(f"Powering On {vm.name}...")
                         vm.PowerOn()
                         sleep(start_delay)
+                        is_found = True
                         break
+                if not is_found:
+                    print(f"{vm_info.name} not found")
         except Exception as err:
             print(err)
         finally:
@@ -127,11 +132,16 @@ def turn_off_vms(servers: list[Server]):
             conn.connect(ip, user, password)
             vms_found = conn.get_all_vms()
             for vm_info in vms:
+                is_found = False
                 for vm, datacenter in vms_found:
                     if vm.name == vm_info.name and datacenter == vm_info.datacenter:
+                        print(f"Powering Off {vm.name}...")
                         vm.PowerOff()
                         sleep(stop_delay)
+                        is_found = True
                         break
+                if not is_found:
+                    print(f"{vm_info.name} not found")
         except Exception as err:
             print(err)
         finally:
