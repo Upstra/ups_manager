@@ -67,11 +67,11 @@ def load_plan_from_yaml(file_path: str) -> list[Server]:
                 vms=VMs(
                     shutdown=VMAction(
                         order=[VM(name=vm['vm']['name'], datacenter=vm['vm']['datacenter']) for vm in server['server']['vms']['shutdown']['order']],
-                        delay=server['vms']['shutdown']['delay']
+                        delay=server['server']['vms']['shutdown']['delay']
                     ),
                     restart=VMAction(
                         order=[VM(name=vm['vm']['name'], datacenter=vm['vm']['datacenter']) for vm in server['server']['vms']['restart']['order']],
-                        delay=server['vms']['restart']['delay']
+                        delay=server['server']['vms']['restart']['delay']
                     ),
                 )
             )
