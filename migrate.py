@@ -3,6 +3,8 @@ from time import sleep
 from argparse import ArgumentParser
 from dataclasses import dataclass
 from os.path import join as path_join
+from pyVmomi import vim
+from pyVim.task import WaitForTask
 
 from vm_ware_connection import VMwareConnection
 
@@ -10,7 +12,7 @@ from vm_ware_connection import VMwareConnection
 @dataclass
 class VM:
     name: str
-    datacenter: str
+    uuid: str
 
 @dataclass
 class VMAction:
@@ -99,11 +101,12 @@ def turn_on_vms(servers: list[Server]):
             vms_found = conn.get_all_vms()
             for vm_info in vms:
                 is_found = False
-                for vm, datacenter in vms_found:
-                    if vm.name == vm_info.name and datacenter == vm_info.datacenter:
+                for vm in vms_found:
+                    if vm.config.uuid == vm_info.uuid:
                         print(f"Powering On {vm.name}...")
                         vm.PowerOn()
                         sleep(start_delay)
+                        vms_found.remove(vm)
                         is_found = True
                         break
                 if not is_found:
@@ -134,11 +137,51 @@ def turn_off_vms(servers: list[Server]):
             vms_found = conn.get_all_vms()
             for vm_info in vms:
                 is_found = False
-                for vm, datacenter in vms_found:
-                    if vm.name == vm_info.name and datacenter == vm_info.datacenter:
+                for vm in vms_found:
+                    if vm.config.uuid == vm_info.uuid:
                         print(f"Powering Off {vm.name}...")
                         vm.PowerOff()
                         sleep(stop_delay)
+                        vms_found.remove(vm)
+                        is_found = True
+                        break
+                if not is_found:
+                    print(f"{vm_info.name} not found")
+        except Exception as err:
+            print(err)
+        finally:
+            conn.disconnect()
+
+
+def migrate_vms(servers: list[Server]):
+    conn = VMwareConnection()
+
+    for server in servers:
+        print(f"Extinction du serveur {server.name}")
+        ip = server.ip
+        user = server.host
+        password = server.password
+        vms = server.vms.shutdown.order
+        stop_delay = server.vms.shutdown.delay
+        try:
+            conn.connect(ip, user, password)
+            vms_found = conn.get_all_vms()
+            for vm_info in vms:
+                is_found = False
+                for vm in vms_found:
+                    if vm.config.uuid == vm_info.uuid:
+                        print(f"Powering Off {vm.name}...")
+                        task = vm.PowerOff()
+                        WaitForTask(task)
+                        # target_host = conn.get_host_system(datacenter)
+                        # target_resource_pool = target_host.parent.resourcePool
+                        # vm.Migrate(
+                        #     pool=target_resource_pool,
+                        #     host=target_host,
+                        #     priority=vim.VirtualMachine.MovePriority.defaultPriority
+                        # )
+                        sleep(stop_delay)
+                        vms_found.remove(vm)
                         is_found = True
                         break
                 if not is_found:

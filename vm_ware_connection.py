@@ -20,11 +20,11 @@ def error_message(message: str, http_code = 400) -> str:
         }
     }, indent=2)
 
-def json_vms_info(vms: list[tuple[vim.VirtualMachine, str]]) -> str:
+def json_vms_info(vms: list[vim.VirtualMachine]) -> str:
     """
     Format VMs data to a json dictionary
     Args:
-        vms (list[tuple[vim.VirtualMachine, str]]): A list of VM object and name of the datacenter
+        vms (list[vim.VirtualMachine]): A list of VM object
     Returns:
         str: A string formatted json dump of the vms data
     """
@@ -32,7 +32,7 @@ def json_vms_info(vms: list[tuple[vim.VirtualMachine, str]]) -> str:
     for vm, datacenter_name in vms:
         json_vms["vms"].append({
             "name": vm.name,
-            "datacenter": datacenter_name,
+            "uuid": vm.config.uuid,
             "hostName": vm.guest.hostName if vm.guest and vm.guest.hostName else "",
             "ip": vm.summary.guest.ipAddress if vm.summary.guest and vm.summary.guest.ipAddress else "",
             "guestOs": vm.config.guestFullName,
@@ -104,46 +104,49 @@ class VMwareConnection:
         self._content = None
         self._si = None
 
-    def get_all_vms(self) -> list[tuple[vim.VirtualMachine, str]]:
+    def get_all_vms(self) -> list[vim.VirtualMachine]:
         """
         Get a list of VMs stored in the server
         Returns:
-            list[tuple[vim.VirtualMachine, str]]: The list of VM object with corresponding datacenter name
+            list[vim.VirtualMachine]: The list of VM object
         """
-        def collect_vms_from_folder(folder, datacenter_name, vms):
+        def collect_vms_from_folder(folder, vms):
             for entity in folder.childEntity:
                 if isinstance(entity, vim.VirtualMachine):
-                    vms.append((entity, datacenter_name))
+                    vms.append(entity)
                 elif isinstance(entity, vim.Folder):
-                    collect_vms_from_folder(entity, datacenter_name, vms)
+                    collect_vms_from_folder(entity, vms)
 
         vms = []
         if not self._si:
             return vms
         for datacenter in self._content.rootFolder.childEntity:
-            datacenter_name = datacenter.name
             vm_folder = datacenter.vmFolder
             vm_list = vm_folder.childEntity
             for vm in vm_list:
                 if isinstance(vm, vim.VirtualMachine):
-                    vms.append((vm, datacenter_name))
+                    vms.append(vm)
                 elif isinstance(vm, vim.Folder):
-                    collect_vms_from_folder(vm_folder, datacenter_name, vms)
+                    collect_vms_from_folder(vm_folder, vms)
         return vms
 
-    def get_vm(self, vm_name: str, datacenter_name: str) -> vim.VirtualMachine:
+    def get_vm(self, uuid: str) -> vim.VirtualMachine:
         """
-        Get a VM by name and datacenter location
+        Get a VM by its BIOS UUID
         Args:
-            vm_name (str): The name of the VM
-            datacenter_name (str): The name of the datacenter where the VM is located
+            uuid (str): The uuid of the VM
         Returns:
             vim.VirtualMachine: The VM object, or None if not found
         """
         if not self._si:
             return None
         search_index = self._content.searchIndex
-        vm = search_index.FindByInventoryPath(f"{datacenter_name}/vm/{vm_name}")
+        vm = search_index.FindByUuid(
+            datacenter=None,
+            uuid=uuid,
+            vmSearch=True,
+            instanceUuid=False
+        )
         return vm
 
     def get_host_system(self, datacenter_name: str) -> vim.HostSystem:
