@@ -22,10 +22,12 @@ class Ilo:
     def get_server_status(self):
         resp = self._session.get(f"https://{self.ip}/redfish/v1/Systems/1/", headers=self._headers)
         if resp.status_code != 200:
-            print(f"Erreur: {resp.status_code}")
+            print(resp)
             return "Error"
         self._reset_uri = resp.json()["Actions"]["#ComputerSystem.Reset"]["target"]
         power_state = resp.json().get("PowerState", "Unknown")
+        print(f"json: {resp.json()}")
+        print(f"PowerState: {power_state}")
         return power_state
 
     def stop_server(self):
@@ -55,6 +57,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     ilo = Ilo(args.ip)
+    print(f"Connection avec l'utilisateur: {args.user} et mot de passe: {args.password}")
     ilo.connect(args.user, args.password)
     if args.start:
         ilo.start_server()
