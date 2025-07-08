@@ -33,15 +33,14 @@ def json_vms_info(vms: list[vim.VirtualMachine]) -> str:
         json_vms["vms"].append({
             "name": vm.name,
             "uuid": vm.config.uuid,
-            "hostName": vm.guest.hostName if vm.guest and vm.guest.hostName else "",
+            "esxiServer": vm.runtime.host.name if vm.runtime.host else "",
             "ip": vm.summary.guest.ipAddress if vm.summary.guest and vm.summary.guest.ipAddress else "",
             "guestOs": vm.config.guestFullName,
             "guestFamily": vm.guest.guestFamily if vm.guest else "",
             "version": vm.config.version,
             "createDate": vm.config.createDate.isoformat() if vm.config.createDate else "",
             "numCoresPerSocket": vm.config.hardware.numCoresPerSocket,
-            "numCPU": vm.config.hardware.numCPU,
-            "vmPathName": vm.summary.config.vmPathName
+            "numCPU": vm.config.hardware.numCPU
         })
     return json_dumps(json_vms, indent=2)
 

@@ -3,20 +3,14 @@ from time import sleep
 from argparse import ArgumentParser
 from dataclasses import dataclass
 from os.path import join as path_join
-from pyVmomi import vim
 from pyVim.task import WaitForTask
 
 from vm_ware_connection import VMwareConnection
 
 
 @dataclass
-class VM:
-    name: str
-    uuid: str
-
-@dataclass
 class VMAction:
-    order: list[VM]
+    order: list[str]
     delay: int
 
 @dataclass
@@ -68,11 +62,11 @@ def load_plan_from_yaml(file_path: str) -> list[Server]:
                 destination=server['server']['destination'] if 'destination' in server['server'] else None,
                 vms=VMs(
                     shutdown=VMAction(
-                        order=[VM(name=vm['vm']['name'], datacenter=vm['vm']['datacenter']) for vm in server['server']['vms']['shutdown']['order']],
+                        order=[vm['vm_uuid'] for vm in server['server']['vms']['shutdown']['order']],
                         delay=server['server']['vms']['shutdown']['delay']
                     ),
                     restart=VMAction(
-                        order=[VM(name=vm['vm']['name'], datacenter=vm['vm']['datacenter']) for vm in server['server']['vms']['restart']['order']],
+                        order=[vm['vm_uuid'] for vm in server['server']['vms']['restart']['order']],
                         delay=server['server']['vms']['restart']['delay']
                     ),
                 )
@@ -99,10 +93,10 @@ def turn_on_vms(servers: list[Server]):
         try:
             conn.connect(ip, user, password)
             vms_found = conn.get_all_vms()
-            for vm_info in vms:
+            for vm_uuid in vms:
                 is_found = False
                 for vm in vms_found:
-                    if vm.config.uuid == vm_info.uuid:
+                    if vm.config.uuid == vm_uuid:
                         print(f"Powering On {vm.name}...")
                         vm.PowerOn()
                         sleep(start_delay)
@@ -110,7 +104,7 @@ def turn_on_vms(servers: list[Server]):
                         is_found = True
                         break
                 if not is_found:
-                    print(f"{vm_info.name} not found")
+                    print(f"{vm_uuid} not found")
         except Exception as err:
             print(err)
         finally:
@@ -135,10 +129,10 @@ def turn_off_vms(servers: list[Server]):
         try:
             conn.connect(ip, user, password)
             vms_found = conn.get_all_vms()
-            for vm_info in vms:
+            for vm_uuid in vms:
                 is_found = False
                 for vm in vms_found:
-                    if vm.config.uuid == vm_info.uuid:
+                    if vm.config.uuid == vm_uuid:
                         print(f"Powering Off {vm.name}...")
                         vm.PowerOff()
                         sleep(stop_delay)
@@ -146,7 +140,7 @@ def turn_off_vms(servers: list[Server]):
                         is_found = True
                         break
                 if not is_found:
-                    print(f"{vm_info.name} not found")
+                    print(f"{vm_uuid} not found")
         except Exception as err:
             print(err)
         finally:
@@ -166,10 +160,10 @@ def migrate_vms(servers: list[Server]):
         try:
             conn.connect(ip, user, password)
             vms_found = conn.get_all_vms()
-            for vm_info in vms:
+            for vm_uuid in vms:
                 is_found = False
                 for vm in vms_found:
-                    if vm.config.uuid == vm_info.uuid:
+                    if vm.config.uuid == vm_uuid:
                         print(f"Powering Off {vm.name}...")
                         task = vm.PowerOff()
                         WaitForTask(task)
@@ -185,7 +179,7 @@ def migrate_vms(servers: list[Server]):
                         is_found = True
                         break
                 if not is_found:
-                    print(f"{vm_info.name} not found")
+                    print(f"{vm_uuid} not found")
         except Exception as err:
             print(err)
         finally:
