@@ -32,9 +32,9 @@ def json_vms_info(vms: list[vim.VirtualMachine]) -> str:
     for vm in vms:
         json_vms["vms"].append({
             "name": vm.name,
-            "moid": vm._moid,
+            "moid": vm._moId,
             "esxiHostName": vm.runtime.host.name if vm.runtime.host else "",
-            "esxiHostMoid": vm.runtime.host._moid if vm.runtime.host else "",
+            "esxiHostMoid": vm.runtime.host._moId if vm.runtime.host else "",
             "ip": vm.summary.guest.ipAddress if vm.summary.guest and vm.summary.guest.ipAddress else "",
             "guestOs": vm.config.guestFullName,
             "guestFamily": vm.guest.guestFamily if vm.guest else "",
