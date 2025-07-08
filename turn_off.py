@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from time import sleep
+from pyVim.task import WaitForTask
 
 from vm_ware_connection import VMwareConnection, json_metrics_info
 
@@ -21,8 +21,8 @@ if __name__ == "__main__":
         if vm:
             print(json_metrics_info(vm))
             print("Power Off...")
-            vm.PowerOff()
-            sleep(10)
+            task = vm.PowerOff()
+            WaitForTask(task)
             print(json_metrics_info(vm))
         else:
             print("VM not found")
