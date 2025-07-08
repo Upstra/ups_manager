@@ -16,5 +16,7 @@ if [[ -z "$IP" ]]; then
     exit 1
 fi
 
-CMD="/bin/snmpget -OT -mall -c\"public\" -v1 \"$IP\" UPS-MIB::upsEstimatedMinutesRemaining.0 | /bin/awk '{print$4}'"
-eval "$CMD"
+CMD="/bin/snmpget -OT -mall -c\"public\" -v1 \"$IP\" UPS-MIB::upsEstimatedMinutesRemaining.0 | awk -F': ' '{print \$2}' | awk '{print \$1}'"
+VALUE=$(eval "$CMD")
+
+echo "$VALUE"
