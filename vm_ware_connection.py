@@ -124,12 +124,12 @@ class VMwareConnection:
         for datacenter in self._content.rootFolder.childEntity:
             vm_folder = datacenter.vmFolder
             vm_list = vm_folder.childEntity
-            for vm in vm_list:
-                if isinstance(vm, vim.VirtualMachine):
-                    print(f"{vm.name} in root folder")
-                    vms.append(vm)
-                elif isinstance(vm, vim.Folder):
-                    collect_vms_from_folder(vm_folder, vms)
+            for entity in vm_list:
+                if isinstance(entity, vim.VirtualMachine):
+                    print(f"{entity.name} in root folder")
+                    vms.append(entity)
+                elif isinstance(entity, vim.Folder):
+                    collect_vms_from_folder(entity, vms)
         return vms
 
     def get_vm(self, moid: str) -> vim.VirtualMachine:
