@@ -138,9 +138,26 @@ class VMwareConnection:
         Returns:
             vim.VirtualMachine: The VM object, or None if not found
         """
+        def search_moid_in_folder(folder, moid):
+            for entity in folder.childEntity:
+                if isinstance(entity, vim.VirtualMachine):
+                    if entity._moId == moid:
+                        return entity
+                elif isinstance(entity, vim.Folder):
+                    vm = search_moid_in_folder(entity, moid)
+                    if vm:
+                        return vm
+            return None
+
         if not self._si:
             return None
-        return vim.VirtualMachine(moid, self._content)
+
+        for datacenter in self._content.rootFolder.childEntity:
+            vm_folder = datacenter.vmFolder
+            vm = search_moid_in_folder(vm_folder, moid)
+            if vm:
+                return vm
+        return None
 
     def get_host_system(self, esxi_moid: str) -> vim.HostSystem:
         """
