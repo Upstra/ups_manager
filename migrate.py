@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 from dataclasses import dataclass
 from os.path import join as path_join
 from pyVim.task import WaitForTask
+from pyVmomi import vim
 
 from vm_ware_connection import VMwareConnection
 
@@ -21,20 +22,29 @@ class VMs:
 @dataclass
 class Server:
     name: str
-    ip: str
-    host: str
-    password: str
+    moid: str
     destination: str
     vms: VMs
 
+@dataclass
+class Servers:
+    servers: list[Server]
 
-def load_plan_from_yaml(file_path: str) -> list[Server]:
+@dataclass
+class VCenter:
+    ip: str
+    user: str
+    password: str
+    port: int
+
+
+def load_plan_from_yaml(file_path: str) -> tuple[VCenter, Servers]:
     """
     Load a migration plan stored in a YAML file
     Args:
         file_path (str): The path to the migration plan
     Returns:
-        list[Server]: A list of `Server` objects representing the migration plan for each server
+        tuple[VCenter, Servers]: A `VCenter` object and a list of `Server` objects representing the migration plan
     Raises:
         FileNotFoundError: If the YAML file doesn't exist
         yaml.YAMLError: If the YAML file is malformed
@@ -42,148 +52,132 @@ def load_plan_from_yaml(file_path: str) -> list[Server]:
      """
     try:
         with open(file_path, 'r') as f:
-            yaml_data = yaml_load(f)
-            if not yaml_data or 'servers' not in yaml_data:
-                raise KeyError("YAML file must contain 'servers' key")
-            data = yaml_data['servers']
+            data = yaml_load(f)
     except FileNotFoundError:
         raise FileNotFoundError(f"Migration plan file not found: {file_path}")
     except Exception as e:
         raise ValueError(f"Error parsing YAML file: {e}")
 
-    servers = []
-    for server in data:
-        servers.append(
+    v_center = VCenter(
+        ip=data['vCenter']['ip'],
+        user=data['vCenter']['user'],
+        password=data['vCenter']['password'],
+        port=data['vCenter']['port'] if 'port' in data['vCenter'] else 443,
+    )
+
+    servers = Servers(servers=[])
+    for server in data['servers']:
+        servers.servers.append(
             Server(
                 name=server['server']['name'],
-                ip=server['server']['ip'],
-                host=server['server']['host'],
-                password=server['server']['password'],
+                moid=server['server']['moid'],
                 destination=server['server']['destination'] if 'destination' in server['server'] else None,
                 vms=VMs(
                     shutdown=VMAction(
-                        order=[vm['vm_moid'] for vm in server['server']['vms']['shutdown']['order']],
+                        order=[vm['vmMoId'] for vm in server['server']['vms']['shutdown']['order']],
                         delay=server['server']['vms']['shutdown']['delay']
                     ),
                     restart=VMAction(
-                        order=[vm['vm_moid'] for vm in server['server']['vms']['restart']['order']],
+                        order=[vm['vmMoId'] for vm in server['server']['vms']['restart']['order']],
                         delay=server['server']['vms']['restart']['delay']
                     ),
                 )
             )
         )
-    return servers
+    return v_center, servers
 
 
-def turn_on_vms(servers: list[Server]):
+def turn_on_vms(v_center: VCenter, servers: Servers):
     """
     Launch the restart plan of all servers specified in `servers` to go back to the initial state
     Args:
-        servers (list[Server]): The migration plan for each server
+        v_center (VCenter): The vCenter that orchestrates the migration plan
+        servers (Servers): The migration plan for each server
     """
     conn = VMwareConnection()
-
-    for server in servers:
-        print(f"Allumage du serveur {server.name}")
-        ip = server.ip
-        user = server.host
-        password = server.password
-        vms = server.vms.restart.order
-        start_delay = server.vms.restart.delay
-        try:
-            conn.connect(ip, user, password)
-            vms_found = conn.get_all_vms()
+    try:
+        conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
+        for server in servers.servers:
+            print(f"Allumage du serveur {server.name} ({server.moid})")
+            vms = server.vms.restart.order
+            start_delay = server.vms.restart.delay
             for vm_moid in vms:
-                is_found = False
-                for vm in vms_found:
-                    if vm._moid == vm_moid:
-                        print(f"Powering On {vm.name}...")
-                        vm.PowerOn()
-                        sleep(start_delay)
-                        vms_found.remove(vm)
-                        is_found = True
-                        break
-                if not is_found:
+                vm = conn.get_vm(vm_moid)
+                if not vm:
                     print(f"{vm_moid} not found")
-        except Exception as err:
-            print(err)
-        finally:
-            conn.disconnect()
+                    continue
+                print(f"Powering On {vm.name} ({vm_moid})...")
+                vm.PowerOn()
+                sleep(start_delay)
+    except Exception as err:
+        print(err)
+    finally:
+        conn.disconnect()
 
 
-def turn_off_vms(servers: list[Server]):
+def turn_off_vms(v_center: VCenter, servers: Servers):
     """
-    Launch the shutdown plan of all servers specified in `servers` to migrate each vm to a distant server
+    Launch the shutdown plan of all servers specified in `servers
     Args:
-        servers (list[Server]): The migration plan for each server
+        v_center (VCenter): The vCenter that orchestrates the migration plan
+        servers (Servers): The migration plan for each server
     """
     conn = VMwareConnection()
-
-    for server in servers:
-        print(f"Extinction du serveur {server.name}")
-        ip = server.ip
-        user = server.host
-        password = server.password
-        vms = server.vms.shutdown.order
-        stop_delay = server.vms.shutdown.delay
-        try:
-            conn.connect(ip, user, password)
-            vms_found = conn.get_all_vms()
+    try:
+        conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
+        for server in servers.servers:
+            print(f"Extinction du serveur {server.name} ({server.moid})")
+            vms = server.vms.shutdown.order
+            stop_delay = server.vms.shutdown.delay
             for vm_moid in vms:
-                is_found = False
-                for vm in vms_found:
-                    if vm._moid == vm_moid:
-                        print(f"Powering Off {vm.name}...")
-                        vm.PowerOff()
-                        sleep(stop_delay)
-                        vms_found.remove(vm)
-                        is_found = True
-                        break
-                if not is_found:
+                vm = conn.get_vm(vm_moid)
+                if not vm:
                     print(f"{vm_moid} not found")
-        except Exception as err:
-            print(err)
-        finally:
-            conn.disconnect()
+                    continue
+                print(f"Powering Off {vm.name}...")
+                vm.PowerOff()
+                sleep(stop_delay)
+    except Exception as err:
+        print(err)
+    finally:
+        conn.disconnect()
 
 
-def migrate_vms(servers: list[Server]):
+def migrate_vms(v_center: VCenter, servers: Servers):
+    """
+    Launch the migration plan of all servers specified in `servers` to migrate each vm to a distant server
+    Args:
+        v_center (VCenter): The vCenter that orchestrates the migration plan
+        servers (Servers): The migration plan for each server
+    """
     conn = VMwareConnection()
+    try:
+        conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
+    except Exception as err:
+        print(err)
+    finally:
+        conn.disconnect()
 
-    for server in servers:
-        print(f"Extinction du serveur {server.name}")
-        ip = server.ip
-        user = server.host
-        password = server.password
+    for server in servers.servers:
+        print(f"Migration du serveur {server.name} ({server.moid})")
         vms = server.vms.shutdown.order
         stop_delay = server.vms.shutdown.delay
-        try:
-            conn.connect(ip, user, password)
-            vms_found = conn.get_all_vms()
-            for vm_moid in vms:
-                is_found = False
-                for vm in vms_found:
-                    if vm._moid == vm_moid:
-                        print(f"Powering Off {vm.name}...")
-                        task = vm.PowerOff()
-                        WaitForTask(task)
-                        # target_host = conn.get_host_system(datacenter)
-                        # target_resource_pool = target_host.parent.resourcePool
-                        # vm.Migrate(
-                        #     pool=target_resource_pool,
-                        #     host=target_host,
-                        #     priority=vim.VirtualMachine.MovePriority.defaultPriority
-                        # )
-                        sleep(stop_delay)
-                        vms_found.remove(vm)
-                        is_found = True
-                        break
-                if not is_found:
-                    print(f"{vm_moid} not found")
-        except Exception as err:
-            print(err)
-        finally:
-            conn.disconnect()
+        for vm_moid in vms:
+            vm = conn.get_vm(vm_moid)
+            if not vm:
+                print(f"{vm_moid} not found")
+                continue
+            print(f"Powering Off {vm.name}...")
+            task = vm.PowerOff()
+            WaitForTask(task)
+            target_host = conn.get_host_system(server.destination)
+            target_resource_pool = target_host.parent.resourcePool
+            vm.Migrate(
+                pool=target_resource_pool,
+                host=target_host,
+                priority=vim.VirtualMachine.MovePriority.defaultPriority
+            )
+            sleep(stop_delay)
 
 
 if __name__ == "__main__":
@@ -195,13 +189,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    servers = load_plan_from_yaml(path_join("plans", args.plan))
+    v_center, servers = load_plan_from_yaml(path_join("plans", args.plan))
 
     if args.shutdown:
         print("Lancement du plan de migration...")
-        turn_off_vms(servers)
+        turn_off_vms(v_center, servers)
     elif args.restart:
         print("Lancement du plan de redémarrage...")
-        turn_on_vms(servers)
+        turn_on_vms(v_center, servers)
     else:
         print("ERREUR: Utilisez --shutdown ou --restart")
