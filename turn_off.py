@@ -6,7 +6,7 @@ from vm_ware_connection import VMwareConnection, json_metrics_info
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Éteindre une VM")
-    parser.add_argument("--uuid", required=True, help="L'UUID BIOS de la VM'")
+    parser.add_argument("--moid", required=True, help="Le Managed Object ID de la VM'")
     parser.add_argument("--ip", required=True, help="Adresse IP du serveur")
     parser.add_argument("--user", required=True, help="Nom d'utilisateur")
     parser.add_argument("--password", required=True, help="Mot de passe")
@@ -17,7 +17,7 @@ if __name__ == "__main__":
     conn = VMwareConnection()
     try:
         conn.connect(args.ip, args.user, args.password, port=args.port)
-        vm = conn.get_vm(args.uuid)
+        vm = conn.get_vm(args.moid)
         if vm:
             print(json_metrics_info(vm))
             print("Power Off...")

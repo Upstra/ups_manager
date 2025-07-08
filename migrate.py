@@ -62,11 +62,11 @@ def load_plan_from_yaml(file_path: str) -> list[Server]:
                 destination=server['server']['destination'] if 'destination' in server['server'] else None,
                 vms=VMs(
                     shutdown=VMAction(
-                        order=[vm['vm_uuid'] for vm in server['server']['vms']['shutdown']['order']],
+                        order=[vm['vm_moid'] for vm in server['server']['vms']['shutdown']['order']],
                         delay=server['server']['vms']['shutdown']['delay']
                     ),
                     restart=VMAction(
-                        order=[vm['vm_uuid'] for vm in server['server']['vms']['restart']['order']],
+                        order=[vm['vm_moid'] for vm in server['server']['vms']['restart']['order']],
                         delay=server['server']['vms']['restart']['delay']
                     ),
                 )
@@ -93,10 +93,10 @@ def turn_on_vms(servers: list[Server]):
         try:
             conn.connect(ip, user, password)
             vms_found = conn.get_all_vms()
-            for vm_uuid in vms:
+            for vm_moid in vms:
                 is_found = False
                 for vm in vms_found:
-                    if vm.config.uuid == vm_uuid:
+                    if vm._moid == vm_moid:
                         print(f"Powering On {vm.name}...")
                         vm.PowerOn()
                         sleep(start_delay)
@@ -104,7 +104,7 @@ def turn_on_vms(servers: list[Server]):
                         is_found = True
                         break
                 if not is_found:
-                    print(f"{vm_uuid} not found")
+                    print(f"{vm_moid} not found")
         except Exception as err:
             print(err)
         finally:
@@ -129,10 +129,10 @@ def turn_off_vms(servers: list[Server]):
         try:
             conn.connect(ip, user, password)
             vms_found = conn.get_all_vms()
-            for vm_uuid in vms:
+            for vm_moid in vms:
                 is_found = False
                 for vm in vms_found:
-                    if vm.config.uuid == vm_uuid:
+                    if vm._moid == vm_moid:
                         print(f"Powering Off {vm.name}...")
                         vm.PowerOff()
                         sleep(stop_delay)
@@ -140,7 +140,7 @@ def turn_off_vms(servers: list[Server]):
                         is_found = True
                         break
                 if not is_found:
-                    print(f"{vm_uuid} not found")
+                    print(f"{vm_moid} not found")
         except Exception as err:
             print(err)
         finally:
@@ -160,10 +160,10 @@ def migrate_vms(servers: list[Server]):
         try:
             conn.connect(ip, user, password)
             vms_found = conn.get_all_vms()
-            for vm_uuid in vms:
+            for vm_moid in vms:
                 is_found = False
                 for vm in vms_found:
-                    if vm.config.uuid == vm_uuid:
+                    if vm._moid == vm_moid:
                         print(f"Powering Off {vm.name}...")
                         task = vm.PowerOff()
                         WaitForTask(task)
@@ -179,7 +179,7 @@ def migrate_vms(servers: list[Server]):
                         is_found = True
                         break
                 if not is_found:
-                    print(f"{vm_uuid} not found")
+                    print(f"{vm_moid} not found")
         except Exception as err:
             print(err)
         finally:

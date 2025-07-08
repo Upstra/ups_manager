@@ -32,8 +32,9 @@ def json_vms_info(vms: list[vim.VirtualMachine]) -> str:
     for vm in vms:
         json_vms["vms"].append({
             "name": vm.name,
-            "uuid": vm.config.uuid,
-            "esxiServer": vm.runtime.host.name if vm.runtime.host else "",
+            "moid": vm._moid,
+            "esxiHostName": vm.runtime.host.name if vm.runtime.host else "",
+            "esxiHostMoid": vm.runtime.host._moid if vm.runtime.host else "",
             "ip": vm.summary.guest.ipAddress if vm.summary.guest and vm.summary.guest.ipAddress else "",
             "guestOs": vm.config.guestFullName,
             "guestFamily": vm.guest.guestFamily if vm.guest else "",
@@ -129,30 +130,39 @@ class VMwareConnection:
                     collect_vms_from_folder(vm_folder, vms)
         return vms
 
-    def get_vm(self, uuid: str) -> vim.VirtualMachine:
+    def get_vm(self, moid: str) -> vim.VirtualMachine:
         """
-        Get a VM by its BIOS UUID
+        Get a VM by its MoId
         Args:
-            uuid (str): The uuid of the VM
+            moid (str): The Managed Object ID of the VM
         Returns:
             vim.VirtualMachine: The VM object, or None if not found
         """
         if not self._si:
             return None
-        search_index = self._content.searchIndex
-        vm = search_index.FindByUuid(
-            datacenter=None,
-            uuid=uuid,
-            vmSearch=True,
-            instanceUuid=False
-        )
-        return vm
+        return vim.VirtualMachine(moid, self._content)
 
-    def get_host_system(self, datacenter_name: str) -> vim.HostSystem:
-        if not self._si:
+    def get_host_system(self, esxi_moid: str) -> vim.HostSystem:
+        """
+        Find a HostSystem object by its MoRef ID (moid)
+        Args:
+            esxi_moid (str): The Managed Object ID of the host
+        Returns:
+            vim.HostSystem: The HostSystem object, or None if not found
+        """
+        if not self._content:
             return None
+
         for datacenter in self._content.rootFolder.childEntity:
-            if datacenter.name == datacenter_name:
-                target_host = datacenter.hostFolder.childEntity[0].host[0]
-                return target_host
+            host_folder = datacenter.hostFolder
+            for compute_resource in host_folder.childEntity:
+                if hasattr(compute_resource, 'host'):
+                    hosts = compute_resource.host
+                else:
+                    hosts = [compute_resource]
+
+                for host in hosts:
+                    if host._moId == esxi_moid:
+                        return host
         return None
+

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Usage: ./turn_on.sh --uuid <UUID> --ip <IP> --user <USER> --password <PASS> [--port <PORT>]
+# Usage: ./turn_on.sh --moid <MOID> --ip <IP> --user <USER> --password <PASS> [--port <PORT>]
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --uuid) VM="$2"; shift ;;
+        --moid) MOID="$2"; shift ;;
         --ip) IP="$2"; shift ;;
         --user) USER="$2"; shift ;;
         --password) PASSWORD="$2"; shift ;;
@@ -14,9 +14,9 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-if [[ -z "$UUID" || -z "$IP" || -z "$USER" || -z "$PASSWORD" ]]; then
+if [[ -z "$MOID" || -z "$IP" || -z "$USER" || -z "$PASSWORD" ]]; then
     echo "ERROR : Missing parameter"
-    echo "Usage: $0 --uuid <UUID> --ip <IP> --user <USER> --password <PASS> [--port <PORT>]"
+    echo "Usage: $0 --moid <MOID> --ip <IP> --user <USER> --password <PASS> [--port <PORT>]"
     exit 1
 fi
 
@@ -29,7 +29,7 @@ if ! source .venv/bin/activate; then
     exit 1
 fi
 
-CMD="python turn_on.py --uuid \"$UUID\" --ip \"$IP\" --user \"$USER\" --password \"$PASSWORD\""
+CMD="python turn_on.py --moid \"$MOID\" --ip \"$IP\" --user \"$USER\" --password \"$PASSWORD\""
 if [[ -n "$PORT" ]]; then
     CMD+=" --port \"$PORT\""
 fi
