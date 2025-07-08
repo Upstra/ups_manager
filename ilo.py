@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    ilo = Ilo(args.ip, verify_ssl=args.verify_ssl)
+    ilo = Ilo(args.ip)
     ilo.connect(args.user, args.password)
     if args.start:
         ilo.start_server()

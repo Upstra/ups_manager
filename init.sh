@@ -8,6 +8,7 @@ if [[ ! -f "$REQ_FILE" ]]; then
     exit 1
 fi
 
+echo "Creating python environment..."
 python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
