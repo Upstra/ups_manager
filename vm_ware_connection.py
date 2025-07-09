@@ -32,9 +32,9 @@ def json_vms_info(vms: list[vim.VirtualMachine]) -> str:
     for vm in vms:
         json_vms["vms"].append({
             "name": vm.name,
-            "moid": vm.moref.value,
+            "moid": vm._moId,
             "esxiHostName": vm.runtime.host.name if vm.runtime.host else "",
-            "esxiHostMoid": vm.runtime.host.moref.value if vm.runtime.host else "",
+            "esxiHostMoid": vm.runtime.host._moId if vm.runtime.host else "",
             "ip": vm.summary.guest.ipAddress if vm.summary.guest and vm.summary.guest.ipAddress else "",
             "guestOs": vm.config.guestFullName,
             "guestFamily": vm.guest.guestFamily if vm.guest else "",
@@ -141,7 +141,7 @@ class VMwareConnection:
         def search_moid_in_folder(folder, moid):
             for entity in folder.childEntity:
                 if isinstance(entity, vim.VirtualMachine):
-                    if entity.moref.value == moid:
+                    if entity._moId == moid:
                         return entity
                 elif isinstance(entity, vim.Folder):
                     vm = search_moid_in_folder(entity, moid)
@@ -179,7 +179,7 @@ class VMwareConnection:
                     hosts = [compute_resource]
 
                 for host in hosts:
-                    if host.moref.value == esxi_moid:
+                    if host._moId == esxi_moid:
                         return host
         return None
 

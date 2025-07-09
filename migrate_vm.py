@@ -42,7 +42,7 @@ if __name__ == "__main__":
             WaitForTask(task)
             print(json_metrics_info(vm))
             print(f"esxiHostName: {vm.runtime.host.name}")
-            print(f"esxiHostMoid: {vm.runtime.host.moref.value}")
+            print(f"esxiHostMoid: {vm.runtime.host._moId}")
         else:
             print("VM not found")
     except Exception as err:
