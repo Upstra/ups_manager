@@ -22,10 +22,10 @@ if __name__ == "__main__":
             summary = host.summary
             stats = host.summary.quickStats
 
-            print(attr for attr in dir(host) if attr[0] != '_' and attr[0].islower())
-            print(attr for attr in dir(hardware) if attr[0] != '_' and attr[0].islower())
-            print(attr for attr in dir(summary) if attr[0] != '_' and attr[0].islower())
-            print(attr for attr in dir(stats) if attr[0] != '_' and attr[0].islower())
+            print([attr for attr in dir(host) if attr[0] != '_' and attr[0].islower()])
+            print([attr for attr in dir(hardware) if attr[0] != '_' and attr[0].islower()])
+            print([attr for attr in dir(summary) if attr[0] != '_' and attr[0].islower()])
+            print([attr for attr in dir(stats) if attr[0] != '_' and attr[0].islower()])
 
             print(f"Nom: {host.name}")
             print(f"CPU cores: {hardware.cpuInfo.numCpuCores}")
