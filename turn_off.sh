@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: ./vm_metrics.sh --moid <MOID> --ip <IP> --user <USER> --password <PASS> [--port <PORT>]
+# Usage: ./turn_off.sh --moid <MOID> --ip <IP> --user <USER> --password <PASS> [--port <PORT>]
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -29,7 +29,7 @@ if ! source .venv/bin/activate; then
     exit 1
 fi
 
-CMD="python vm_metrics.py --moid \"$MOID\" --ip \"$IP\" --user \"$USER\" --password \"$PASSWORD\""
+CMD="python turn_off.py --moid \"$MOID\" --ip \"$IP\" --user \"$USER\" --password \"$PASSWORD\""
 if [[ -n "$PORT" ]]; then
     CMD+=" --port \"$PORT\""
 fi
