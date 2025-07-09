@@ -20,7 +20,7 @@ if __name__ == "__main__":
         vm = conn.get_vm(args.moid)
         if vm:
             print(json_metrics_info(vm))
-            if vm.runtime.powerState == "PoweredOn":
+            if vm.runtime.powerState == "poweredOn":
                 print("Power Off...")
                 task = vm.PowerOff()
                 WaitForTask(task)
