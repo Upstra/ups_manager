@@ -38,15 +38,29 @@ class Ilo:
         power_state = self.get_server_status()
         if power_state == "ON":
             payload = {"ResetType": "ForceOff"}
-            resp = self._session.post(f"https://{self.ip}{self._reset_uri}", json=payload, headers=self._headers)
-            print(resp.status_code, resp.text)
+            try:
+                resp = self._session.post(f"https://{self.ip}{self._reset_uri}", json=payload, headers=self._headers)
+                print(resp.status_code, resp.text)
+            except requests.exceptions.RequestException as e:
+                print(f"Error getting server status: {e}")
+        elif power_state == "OFF":
+            print("Server already off")
+        else:
+            print(f"Power State unsupported: {power_state}")
 
     def start_server(self):
         power_state = self.get_server_status()
         if power_state == "OFF":
             payload = {"ResetType": "On"}
-            resp = self._session.post(f"https://{self.ip}{self._reset_uri}", json=payload, headers=self._headers)
-            print(resp.status_code, resp.text)
+            try:
+                resp = self._session.post(f"https://{self.ip}{self._reset_uri}", json=payload, headers=self._headers)
+                print(resp.status_code, resp.text)
+            except requests.exceptions.RequestException as e:
+                print(f"Error getting server status: {e}")
+        elif power_state == "ON":
+            print("Server already on")
+        else:
+            print(f"Power State unsupported: {power_state}")
 
 
 if __name__ == "__main__":
@@ -61,7 +75,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     ilo = Ilo(args.ip)
-    print(f"Connection avec l'utilisateur: {args.user} et mot de passe: {args.password}")
     ilo.connect(args.user, args.password)
     if args.start:
         ilo.start_server()
