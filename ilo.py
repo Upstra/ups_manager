@@ -1,5 +1,4 @@
 from argparse import ArgumentParser
-from time import sleep
 from requests import get as http_get, post as http_post
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
@@ -32,7 +31,6 @@ class Ilo:
             return "Error"
         self._reset_uri = resp.json()["Actions"]["#ComputerSystem.Reset"]["target"]
         power_state = resp.json().get("PowerState", "Unknown").upper()
-        print(f"PowerState: {power_state}")
         return power_state
 
     def stop_server(self) -> bool:
@@ -87,11 +85,9 @@ if __name__ == "__main__":
     ilo = Ilo(args.ip, args.user, args.password)
     if args.start:
         if ilo.start_server():
-            sleep(5)
             print(ilo.get_server_status())
     elif args.stop:
         if ilo.stop_server():
-            sleep(5)
             print(ilo.get_server_status())
     else:
         print("ERREUR: Utilisez --start ou --stop")
