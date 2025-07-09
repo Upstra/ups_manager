@@ -20,31 +20,36 @@ if __name__ == "__main__":
     try:
         conn.connect(args.ip, args.user, args.password, port=args.port)
         vm = conn.get_vm(args.vmMoId)
-        if vm:
-            print(json_metrics_info(vm))
-            if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
-                print("Power Off...")
-                task = vm.PowerOff()
-                WaitForTask(task)
-            else:
-                print("VM is off")
-            print("Migration to distant server...")
-            target_host = conn.get_host_system(args.distMoId)
-            target_resource_pool = target_host.parent.resourcePool
-            task = vm.Migrate(
-                pool=target_resource_pool,
-                host=target_host,
-                priority=vim.VirtualMachine.MovePriority.defaultPriority
-            )
-            WaitForTask(task)
-            print("Power On...")
-            task = vm.PowerOn()
-            WaitForTask(task)
-            print(json_metrics_info(vm))
-            print(f"esxiHostName: {vm.runtime.host.name}")
-            print(f"esxiHostMoid: {vm.runtime.host._moId}")
-        else:
+        if not vm:
             print("VM not found")
+            conn.disconnect()
+            exit(1)
+        if vm.runtime.host._moId == args.distMoId:
+            print("VM is already on this server")
+            conn.disconnect()
+            exit(1)
+        print(json_metrics_info(vm))
+        if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
+            print("Power Off...")
+            task = vm.PowerOff()
+            WaitForTask(task)
+        else:
+            print("VM is off")
+        print("Migration to distant server...")
+        target_host = conn.get_host_system(args.distMoId)
+        target_resource_pool = target_host.parent.resourcePool
+        task = vm.Migrate(
+            pool=target_resource_pool,
+            host=target_host,
+            priority=vim.VirtualMachine.MovePriority.defaultPriority
+        )
+        WaitForTask(task)
+        print("Power On...")
+        task = vm.PowerOn()
+        WaitForTask(task)
+        print(json_metrics_info(vm))
+        print(f"esxiHostName: {vm.runtime.host.name}")
+        print(f"esxiHostMoid: {vm.runtime.host._moId}")
     except Exception as err:
         print(err)
     finally:

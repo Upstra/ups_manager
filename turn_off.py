@@ -1,7 +1,8 @@
 from argparse import ArgumentParser
+from pyVmomi import vim
 from pyVim.task import WaitForTask
 
-from vm_ware_connection import VMwareConnection, json_metrics_info
+from vm_ware_connection import VMwareConnection
 
 
 if __name__ == "__main__":
@@ -19,14 +20,14 @@ if __name__ == "__main__":
         conn.connect(args.ip, args.user, args.password, port=args.port)
         vm = conn.get_vm(args.moid)
         if vm:
-            print(json_metrics_info(vm))
-            if vm.runtime.powerState == "poweredOn":
+            print(f"Power state : {vm.runtime.powerState}")
+            if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
                 print("Power Off...")
                 task = vm.PowerOff()
                 WaitForTask(task)
             else:
                 print("VM is already off")
-            print(json_metrics_info(vm))
+            print(f"Power state : {vm.runtime.powerState}")
         else:
             print("VM not found")
     except Exception as err:
