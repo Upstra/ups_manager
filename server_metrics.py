@@ -23,13 +23,13 @@ if __name__ == "__main__":
             stats = host.summary.quickStats
 
             print("\thost")
-            [print(f"{attr}: {type(stats[attr])}") for attr in dir(host) if attr[0] != '_' and attr[0].islower()]
+            [print(f"{attr}: {type(getattr(host, attr))}") for attr in dir(host) if attr[0] != '_' and attr[0].islower()]
             print("\thardware")
-            [print(f"{attr}: {type(stats[attr])}") for attr in dir(hardware) if attr[0] != '_' and attr[0].islower()]
+            [print(f"{attr}: {type(getattr(hardware, attr))}") for attr in dir(hardware) if attr[0] != '_' and attr[0].islower()]
             print("\tsummary")
-            [print(f"{attr}: {type(stats[attr])}") for attr in dir(summary) if attr[0] != '_' and attr[0].islower()]
+            [print(f"{attr}: {type(getattr(summary, attr))}") for attr in dir(summary) if attr[0] != '_' and attr[0].islower()]
             print("\tstats")
-            [print(f"{attr}: {type(stats[attr])}") for attr in dir(stats) if attr[0] != '_' and attr[0].islower()]
+            [print(f"{attr}: {type(getattr(stats, attr))}") for attr in dir(stats) if attr[0] != '_' and attr[0].islower()]
 
             print(f"Nom: {host.name}")
             print(f"CPU cores: {hardware.cpuInfo.numCpuCores}")
