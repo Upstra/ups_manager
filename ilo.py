@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-
+from time import sleep
 import requests
 from requests.auth import HTTPBasicAuth
 import urllib3
@@ -20,13 +20,17 @@ class Ilo:
         self._session.verify = self.verify_ssl
 
     def get_server_status(self):
-        resp = self._session.get(f"https://{self.ip}/redfish/v1/Systems/1/", headers=self._headers)
+        try:
+            resp = self._session.get(f"https://{self.ip}/redfish/v1/Systems/1/", headers=self._headers, timeout=10)
+            resp.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            print(f"Error getting server status: {e}")
+            return "Error"
         if resp.status_code != 200:
             print(resp)
             return "Error"
         self._reset_uri = resp.json()["Actions"]["#ComputerSystem.Reset"]["target"]
         power_state = resp.json().get("PowerState", "Unknown").upper()
-        print(f"json: {resp.json()}")
         print(f"PowerState: {power_state}")
         return power_state
 
@@ -61,9 +65,11 @@ if __name__ == "__main__":
     ilo.connect(args.user, args.password)
     if args.start:
         ilo.start_server()
+        sleep(5)
         print(ilo.get_server_status())
     elif args.stop:
         ilo.stop_server()
+        sleep(5)
         print(ilo.get_server_status())
     else:
         print("ERREUR: Utilisez --start ou --stop")
