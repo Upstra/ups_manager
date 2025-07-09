@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 from pyVmomi import vim
 from pyVim.task import WaitForTask
 
-from vm_ware_connection import VMwareConnection, json_metrics_info
+from vm_ware_connection import VMwareConnection
 
 
 if __name__ == "__main__":
@@ -28,7 +28,7 @@ if __name__ == "__main__":
             print("VM is already on this server")
             conn.disconnect()
             exit(1)
-        print(json_metrics_info(vm))
+
         if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
             print("Power Off...")
             task = vm.PowerOff()
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         print("Power On...")
         task = vm.PowerOn()
         WaitForTask(task)
-        print(json_metrics_info(vm))
+        print(f"Power state: {vm.runtime.powerState}")
         print(f"esxiHostName: {vm.runtime.host.name}")
         print(f"esxiHostMoid: {vm.runtime.host._moId}")
     except Exception as err:
