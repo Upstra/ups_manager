@@ -107,7 +107,8 @@ def turn_on_vms(v_center: VCenter, servers: Servers):
                     print(f"{vm_moid} not found")
                     continue
                 print(f"Powering On {vm.name} ({vm_moid})...")
-                vm.PowerOn()
+                task = vm.PowerOn()
+                WaitForTask(task)
                 sleep(start_delay)
     except Exception as err:
         print(err)
@@ -135,7 +136,8 @@ def turn_off_vms(v_center: VCenter, servers: Servers):
                     print(f"{vm_moid} not found")
                     continue
                 print(f"Powering Off {vm.name}...")
-                vm.PowerOff()
+                task = vm.PowerOff()
+                WaitForTask(task)
                 sleep(stop_delay)
     except Exception as err:
         print(err)
@@ -153,31 +155,31 @@ def migrate_vms(v_center: VCenter, servers: Servers):
     conn = VMwareConnection()
     try:
         conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
+        for server in servers.servers:
+            print(f"Migration du serveur {server.name} ({server.moid})")
+            vms = server.vms.shutdown.order
+            stop_delay = server.vms.shutdown.delay
+            for vm_moid in vms:
+                vm = conn.get_vm(vm_moid)
+                if not vm:
+                    print(f"{vm_moid} not found")
+                    continue
+                print(f"Powering Off {vm.name}...")
+                task = vm.PowerOff()
+                WaitForTask(task)
+                target_host = conn.get_host_system(server.destination)
+                target_resource_pool = target_host.parent.resourcePool
+                task = vm.Migrate(
+                    pool=target_resource_pool,
+                    host=target_host,
+                    priority=vim.VirtualMachine.MovePriority.defaultPriority
+                )
+                WaitForTask(task)
+                sleep(stop_delay)
     except Exception as err:
         print(err)
     finally:
         conn.disconnect()
-
-    for server in servers.servers:
-        print(f"Migration du serveur {server.name} ({server.moid})")
-        vms = server.vms.shutdown.order
-        stop_delay = server.vms.shutdown.delay
-        for vm_moid in vms:
-            vm = conn.get_vm(vm_moid)
-            if not vm:
-                print(f"{vm_moid} not found")
-                continue
-            print(f"Powering Off {vm.name}...")
-            task = vm.PowerOff()
-            WaitForTask(task)
-            target_host = conn.get_host_system(server.destination)
-            target_resource_pool = target_host.parent.resourcePool
-            vm.Migrate(
-                pool=target_resource_pool,
-                host=target_host,
-                priority=vim.VirtualMachine.MovePriority.defaultPriority
-            )
-            sleep(stop_delay)
 
 
 if __name__ == "__main__":

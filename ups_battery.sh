@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Usage: ./ups_battery.sh --ip <IP>
 
@@ -16,7 +17,5 @@ if [[ -z "$IP" ]]; then
     exit 1
 fi
 
-CMD="/bin/snmpget -OT -mall -c\"public\" -v1 \"$IP\" UPS-MIB::upsEstimatedMinutesRemaining.0 | awk -F': ' '{print \$2}' | awk '{print \$1}'"
-VALUE=$(eval "$CMD")
-
+VALUE=$(/bin/snmpget -O T -m ALL -c public -v1 "$IP" UPS-MIB::upsEstimatedMinutesRemaining.0 | awk -F': ' '{print $2}' | awk '{print $1}')
 echo "$VALUE"

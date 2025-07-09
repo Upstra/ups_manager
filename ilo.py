@@ -26,9 +26,6 @@ class Ilo:
         except RequestException as e:
             print(f"Error getting server status: {e}")
             return "Error"
-        if resp.status_code != 200:
-            print(resp)
-            return "Error"
         self._reset_uri = resp.json()["Actions"]["#ComputerSystem.Reset"]["target"]
         power_state = resp.json().get("PowerState", "Unknown").upper()
         return power_state
@@ -64,11 +61,16 @@ class Ilo:
                 auth=self._auth,
                 verify=self.verify_ssl
             )
-            print(resp.status_code, resp.text)
-            return True
+            resp.raise_for_status()
         except RequestException as e:
             print(f"Error posting request: {e}")
-        return False
+            return False
+        if resp.status_code in [200, 202, 204]:
+            print(f"Successfully sent payload: {resp.status_code}")
+            return True
+        else:
+            print(f"Error sending payload (status code={resp.status_code}): {resp.text}")
+            return False
 
 
 if __name__ == "__main__":
