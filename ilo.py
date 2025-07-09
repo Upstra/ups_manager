@@ -1,29 +1,30 @@
 from argparse import ArgumentParser
 from time import sleep
-import requests
+from requests import get as http_get, post as http_post
 from requests.auth import HTTPBasicAuth
+from requests.exceptions import RequestException
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class Ilo:
-    def __init__(self, ip: str, verify_ssl=False):
+    def __init__(self, ip: str, user: str, password: str, verify_ssl=False):
         self.ip = ip
         self.verify_ssl = verify_ssl
-        self._session = None
-        self._reset_uri = None
+        self._auth = HTTPBasicAuth(user, password)
+        self._reset_uri = ""
         self._headers = {"Content-Type": "application/json"}
-
-    def connect(self, user: str, password: str):
-        self._session = requests.Session()
-        self._session.auth = HTTPBasicAuth(user, password)
-        self._session.verify = self.verify_ssl
 
     def get_server_status(self):
         try:
-            resp = self._session.get(f"https://{self.ip}/redfish/v1/Systems/1/", headers=self._headers, timeout=10)
+            resp = http_get(
+                f"https://{self.ip}/redfish/v1/Systems/1/",
+                headers=self._headers,
+                auth=self._auth,
+                verify=self.verify_ssl
+            )
             resp.raise_for_status()
-        except requests.exceptions.RequestException as e:
+        except RequestException as e:
             print(f"Error getting server status: {e}")
             return "Error"
         if resp.status_code != 200:
@@ -34,33 +35,42 @@ class Ilo:
         print(f"PowerState: {power_state}")
         return power_state
 
-    def stop_server(self):
+    def stop_server(self) -> bool:
         power_state = self.get_server_status()
         if power_state == "ON":
             payload = {"ResetType": "ForceOff"}
-            try:
-                resp = self._session.post(f"https://{self.ip}{self._reset_uri}", json=payload, headers=self._headers)
-                print(resp.status_code, resp.text)
-            except requests.exceptions.RequestException as e:
-                print(f"Error posting shutdown request: {e}")
+            return self._send_payload(payload)
         elif power_state == "OFF":
-            print("Server already off")
+            print("Server already OFF")
         else:
             print(f"Power State unsupported: {power_state}")
+        return False
 
-    def start_server(self):
+    def start_server(self) -> bool:
         power_state = self.get_server_status()
         if power_state == "OFF":
             payload = {"ResetType": "On"}
-            try:
-                resp = self._session.post(f"https://{self.ip}{self._reset_uri}", json=payload, headers=self._headers)
-                print(resp.status_code, resp.text)
-            except requests.exceptions.RequestException as e:
-                print(f"Error posting startup request: {e}")
+            return self._send_payload(payload)
         elif power_state == "ON":
-            print("Server already on")
+            print("Server already ON")
         else:
             print(f"Power State unsupported: {power_state}")
+        return False
+
+    def _send_payload(self, payload) -> bool:
+        try:
+            resp = http_post(
+                f"https://{self.ip}{self._reset_uri}",
+                json=payload,
+                headers=self._headers,
+                auth=self._auth,
+                verify=self.verify_ssl
+            )
+            print(resp.status_code, resp.text)
+            return True
+        except RequestException as e:
+            print(f"Error posting request: {e}")
+        return False
 
 
 if __name__ == "__main__":
@@ -74,15 +84,14 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    ilo = Ilo(args.ip)
-    ilo.connect(args.user, args.password)
+    ilo = Ilo(args.ip, args.user, args.password)
     if args.start:
-        ilo.start_server()
-        sleep(5)
-        print(ilo.get_server_status())
+        if ilo.start_server():
+            sleep(5)
+            print(ilo.get_server_status())
     elif args.stop:
-        ilo.stop_server()
-        sleep(5)
-        print(ilo.get_server_status())
+        if ilo.stop_server():
+            sleep(5)
+            print(ilo.get_server_status())
     else:
         print("ERREUR: Utilisez --start ou --stop")
