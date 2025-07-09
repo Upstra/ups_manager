@@ -42,7 +42,7 @@ class Ilo:
                 resp = self._session.post(f"https://{self.ip}{self._reset_uri}", json=payload, headers=self._headers)
                 print(resp.status_code, resp.text)
             except requests.exceptions.RequestException as e:
-                print(f"Error getting server status: {e}")
+                print(f"Error posting shutdown request: {e}")
         elif power_state == "OFF":
             print("Server already off")
         else:
@@ -56,7 +56,7 @@ class Ilo:
                 resp = self._session.post(f"https://{self.ip}{self._reset_uri}", json=payload, headers=self._headers)
                 print(resp.status_code, resp.text)
             except requests.exceptions.RequestException as e:
-                print(f"Error getting server status: {e}")
+                print(f"Error posting startup request: {e}")
         elif power_state == "ON":
             print("Server already on")
         else:
