@@ -22,6 +22,39 @@ if __name__ == "__main__":
             summary = host.summary
             stats = host.summary.quickStats
 
+            for attr in dir(host):
+                if attr.startswith("_"):
+                    continue
+                try:
+                    value = getattr(host, attr)
+                    print(f"{attr}: {value}")
+                except Exception as e:
+                    print(f"{attr}: <Erreur: {e}>")
+            for attr in dir(hardware):
+                if attr.startswith("_"):
+                    continue
+                try:
+                    value = getattr(hardware, attr)
+                    print(f"{attr}: {value}")
+                except Exception as e:
+                    print(f"{attr}: <Erreur: {e}>")
+            for attr in dir(summary):
+                if attr.startswith("_"):
+                    continue
+                try:
+                    value = getattr(summary, attr)
+                    print(f"{attr}: {value}")
+                except Exception as e:
+                    print(f"{attr}: <Erreur: {e}>")
+            for attr in dir(stats):
+                if attr.startswith("_"):
+                    continue
+                try:
+                    value = getattr(stats, attr)
+                    print(f"{attr}: {value}")
+                except Exception as e:
+                    print(f"{attr}: <Erreur: {e}>")
+
             print(f"Nom: {host.name}")
             print(f"CPU cores: {hardware.cpuInfo.numCpuCores}")
             print(f"RAM totale: {hardware.memorySize / (1024 ** 3):.2f} GB")
