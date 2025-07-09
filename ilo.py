@@ -25,7 +25,7 @@ class Ilo:
             print(resp)
             return "Error"
         self._reset_uri = resp.json()["Actions"]["#ComputerSystem.Reset"]["target"]
-        power_state = resp.json().get("PowerState", "Unknown")
+        power_state = resp.json().get("PowerState", "Unknown").upper()
         print(f"json: {resp.json()}")
         print(f"PowerState: {power_state}")
         return power_state
@@ -61,7 +61,9 @@ if __name__ == "__main__":
     ilo.connect(args.user, args.password)
     if args.start:
         ilo.start_server()
+        print(ilo.get_server_status())
     elif args.stop:
         ilo.stop_server()
+        print(ilo.get_server_status())
     else:
         print("ERREUR: Utilisez --start ou --stop")
