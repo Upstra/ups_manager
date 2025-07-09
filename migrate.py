@@ -65,22 +65,20 @@ def load_plan_from_yaml(file_path: str) -> tuple[VCenter, Servers]:
         port=data['vCenter']['port'] if 'port' in data['vCenter'] else 443,
     )
 
-    servers = Servers(servers=[])
-    for server in data['servers']:
-        servers.servers.append(
-            Server(
-                name=server['server']['name'],
-                moid=server['server']['moid'],
-                destination=server['server']['destination'] if 'destination' in server['server'] else None,
-                vms=VMs(
-                    shutdown=VMAction(
-                        order=[vm['vmMoId'] for vm in server['server']['vms']['shutdown']['order']],
-                        delay=server['server']['vms']['shutdown']['delay']
-                    ),
-                    restart=VMAction(
-                        order=[vm['vmMoId'] for vm in server['server']['vms']['restart']['order']],
-                        delay=server['server']['vms']['restart']['delay']
-                    ),
+    servers = Servers(servers=[None] * len(data['servers']))
+    for i, server in enumerate(data['servers']):
+        servers.servers[i] = Server(
+            name=server['server']['name'],
+            moid=server['server']['moid'],
+            destination=server['server']['destination'] if 'destination' in server['server'] else None,
+            vms=VMs(
+                shutdown=VMAction(
+                    order=[vm['vmMoId'] for vm in server['server']['vms']['shutdown']['order']],
+                    delay=server['server']['vms']['shutdown']['delay']
+                ),
+                restart=VMAction(
+                    order=[vm['vmMoId'] for vm in server['server']['vms']['restart']['order']],
+                    delay=server['server']['vms']['restart']['delay']
                 )
             )
         )

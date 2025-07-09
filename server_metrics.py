@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 from pyVmomi import vim
 
-from vm_ware_connection import VMwareConnection, error_message
+from vm_ware_connection import VMwareConnection, error_message, json_server_info
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Récupérer les métriques d'un serveur")
@@ -18,25 +18,33 @@ if __name__ == "__main__":
         conn.connect(args.ip, args.user, args.password, port=args.port)
         host = conn.get_host_system(args.moid)
         if host:
-            hardware = host.hardware
-            summary = host.summary
-            stats = host.summary.quickStats
+            capability = host.capability
+            print("\tcapability")
+            [print(f"{attr}: {type(getattr(capability, attr))}") for attr in dir(capability) if attr[0] != '_' and attr[0].islower()]
 
-            print("\thost")
-            [print(f"{attr}: {type(getattr(host, attr))}") for attr in dir(host) if attr[0] != '_' and attr[0].islower()]
-            print("\thardware")
-            [print(f"{attr}: {type(getattr(hardware, attr))}") for attr in dir(hardware) if attr[0] != '_' and attr[0].islower()]
-            print("\tsummary")
-            [print(f"{attr}: {type(getattr(summary, attr))}") for attr in dir(summary) if attr[0] != '_' and attr[0].islower()]
-            print("\tstats")
-            [print(f"{attr}: {type(getattr(stats, attr))}") for attr in dir(stats) if attr[0] != '_' and attr[0].islower()]
+            config = host.config
+            print("\tconfig")
+            [print(f"{attr}: {type(getattr(config, attr))}") for attr in dir(config) if attr[0] != '_' and attr[0].islower()]
 
-            print(f"Nom: {host.name}")
-            print(f"CPU cores: {hardware.cpuInfo.numCpuCores}")
-            print(f"RAM totale: {hardware.memorySize / (1024 ** 3):.2f} GB")
-            print(f"CPU usage: {stats.overallCpuUsage} MHz")
-            print(f"RAM usage: {stats.overallMemoryUsage} MB")
-            print(f"Etat général: {summary.overallStatus}")
+            configManager = host.configManager
+            [print(f"{attr}: {type(getattr(configManager, attr))}") for attr in dir(configManager) if attr[0] != '_' and attr[0].islower()]
+
+            configStatus = host.configStatus
+            [print(f"{attr}: {type(getattr(configStatus, attr))}") for attr in dir(configStatus) if attr[0] != '_' and attr[0].islower()]
+
+            network = host.network[0]
+            [print(f"{attr}: {type(getattr(network, attr))}") for attr in dir(network) if attr[0] != '_' and attr[0].islower()]
+
+            parent = host.parent
+            [print(f"{attr}: {type(getattr(parent, attr))}") for attr in dir(parent) if attr[0] != '_' and attr[0].islower()]
+
+            runtime = host.runtime
+            [print(f"{attr}: {type(getattr(runtime, attr))}") for attr in dir(runtime) if attr[0] != '_' and attr[0].islower()]
+
+            systemResources = host.systemResources
+            [print(f"{attr}: {type(getattr(systemResources, attr))}") for attr in dir(systemResources) if attr[0] != '_' and attr[0].islower()]
+
+            print(json_server_info(host))
         else:
             print(error_message("Server not found", 404))
     except vim.fault.InvalidLogin as _:
