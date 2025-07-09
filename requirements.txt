@@ -1,5 +1,3 @@
-setuptools-rust==0.12.1
-python-hpilo
 pyvmomi>=9.0.0.0,<10.0.0
 pyyaml>=6.0.2,<7.0.0
 python-dotenv>=1.1.1,<2.0.0
