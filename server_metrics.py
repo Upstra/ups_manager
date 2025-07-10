@@ -18,30 +18,16 @@ if __name__ == "__main__":
         conn.connect(args.ip, args.user, args.password, port=args.port)
         host = conn.get_host_system(args.moid)
         if host:
-            capability = host.capability
-            print("\tcapability")
-            [print(f"{attr}: {type(getattr(capability, attr))}") for attr in dir(capability) if attr[0] != '_' and attr[0].islower()]
-
-            config = host.config
-            print("\tconfig")
-            [print(f"{attr}: {type(getattr(config, attr))}") for attr in dir(config) if attr[0] != '_' and attr[0].islower()]
-
-            configManager = host.configManager
-            [print(f"{attr}: {type(getattr(configManager, attr))}") for attr in dir(configManager) if attr[0] != '_' and attr[0].islower()]
-
-            configStatus = host.configStatus
-            [print(f"{attr}: {type(getattr(configStatus, attr))}") for attr in dir(configStatus) if attr[0] != '_' and attr[0].islower()]
-
             network = host.network[0]
+            print("\tNetwork")
             [print(f"{attr}: {type(getattr(network, attr))}") for attr in dir(network) if attr[0] != '_' and attr[0].islower()]
 
-            parent = host.parent
-            [print(f"{attr}: {type(getattr(parent, attr))}") for attr in dir(parent) if attr[0] != '_' and attr[0].islower()]
-
             runtime = host.runtime
+            print("\truntime")
             [print(f"{attr}: {type(getattr(runtime, attr))}") for attr in dir(runtime) if attr[0] != '_' and attr[0].islower()]
 
             systemResources = host.systemResources
+            print("\tsystemResources")
             [print(f"{attr}: {type(getattr(systemResources, attr))}") for attr in dir(systemResources) if attr[0] != '_' and attr[0].islower()]
 
             print(json_server_info(host))

@@ -111,6 +111,7 @@ def json_server_info(host: vim.HostSystem) -> str:
         "distributedCpuFairness": host.summary.quickStats.distributedCpuFairness,
         "distributedMemoryFairness": host.summary.quickStats.distributedMemoryFairness,
         "uptime": host.summary.quickStats.uptime,
+        "cluster": host.parent.name
     }
     return json_dumps(json_object, indent=2)
 
