@@ -110,7 +110,13 @@ def json_server_info(host: vim.HostSystem) -> str:
         "ramUsageMB": host.summary.quickStats.overallMemoryUsage,
         "uptime": host.summary.quickStats.uptime,
         "boottime": host.runtime.bootTime.isoformat() if host.runtime.bootTime else "",
-        "cluster": host.parent.name
+        "cluster": host.parent.name,
+        "cpuHz": host.hardware.cpuInfo.hz,
+        "numCpuCores": host.hardware.cpuInfo.numCpuCores,
+        "numCpuThreads": host.hardware.cpuInfo.numCpuThreads,
+        "model": host.hardware.systemInfo.model,
+        "vendor": host.hardware.systemInfo.vendor,
+        "biosVendor": host.hardware.biosInfo.vendor,
     }
     if host.capability:
         json_object["maxHostRunningVms"] = host.capability.maxHostRunningVms

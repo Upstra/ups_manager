@@ -94,8 +94,9 @@ def turn_on_vms(v_center: VCenter, servers: Servers):
         conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
         for server in servers.servers:
             print(f"Allumage du serveur {server.name} ({server.moid})")
-            vms = server.vms.restart.order
-            start_delay = server.vms.restart.delay
+            vms = server.shutdown.vmOrder
+            vms.reverse()
+            start_delay = server.restart.delay
             for vm_moid in vms:
                 vm = conn.get_vm(vm_moid)
                 if not vm:
@@ -123,8 +124,8 @@ def turn_off_vms(v_center: VCenter, servers: Servers):
         conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
         for server in servers.servers:
             print(f"Extinction du serveur {server.name} ({server.moid})")
-            vms = server.vms.shutdown.order
-            stop_delay = server.vms.shutdown.delay
+            vms = server.shutdown.vmOrder
+            stop_delay = server.shutdown.delay
             for vm_moid in vms:
                 vm = conn.get_vm(vm_moid)
                 if not vm:
@@ -152,8 +153,8 @@ def migrate_vms(v_center: VCenter, servers: Servers):
         conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
         for server in servers.servers:
             print(f"Migration du serveur {server.name} ({server.moid})")
-            vms = server.vms.shutdown.order
-            stop_delay = server.vms.shutdown.delay
+            vms = server.shutdown.vmOrder
+            stop_delay = server.shutdown.delay
             for vm_moid in vms:
                 vm = conn.get_vm(vm_moid)
                 if not vm:
