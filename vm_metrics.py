@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 from pyVmomi import vim
 
-from dto import json_metrics_info, result_message
+from dto import vm_metrics_info, result_message
 from vm_ware_connection import VMwareConnection
 
 
@@ -15,7 +15,7 @@ def vm_metrics(moid: str, ip: str, user: str, password: str, port: int) -> str:
         password (str): The password of the VCenter or the ESXI server to connect to
         port (int): The port to use to connect to the VCenter or the ESXI server
     Returns:
-        str: A string formatted json dump with VM metrics (json_metrics_info()), or an error message (result_message())
+        str: A string formatted json dump with VM metrics (vm_metrics_info()), or an error message (result_message())
     """
     conn = VMwareConnection()
     try:
@@ -24,12 +24,12 @@ def vm_metrics(moid: str, ip: str, user: str, password: str, port: int) -> str:
         if not vm:
             return result_message("VM not found", 404)
 
-        return json_metrics_info(vm)
+        return vm_metrics_info(vm)
 
     except vim.fault.InvalidLogin as _:
         return result_message("Invalid credentials", 401)
     except Exception as err:
-        return result_message(str(err))
+        return result_message(str(err), 400)
     finally:
         conn.disconnect()
 

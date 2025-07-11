@@ -29,7 +29,7 @@ def vm_stop(moid: str, ip: str, user: str, password: str, port: int) -> str:
 
         task = vm.PowerOff()
         WaitForTask(task)
-        return result_message("VM has been successfully stopped")
+        return result_message("VM has been successfully stopped", 200)
 
     except Exception as err:
         return result_message(str(err), 400)

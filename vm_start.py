@@ -29,7 +29,7 @@ def vm_start(moid: str, ip: str, user: str, password: str, port: int) -> str:
 
         task = vm.PowerOn()
         WaitForTask(task)
-        return result_message("VM has been successfully started")
+        return result_message("VM has been successfully started", 200)
 
     except Exception as err:
         return result_message(str(err), 400)

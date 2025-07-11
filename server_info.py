@@ -1,21 +1,21 @@
 from argparse import ArgumentParser
 from pyVmomi import vim
 
-from dto import result_message, server_metrics_info
+from dto import result_message, server_info
 from vm_ware_connection import VMwareConnection
 
 
-def server_metrics(moid: str, ip: str, user: str, password: str, port: int) -> str:
+def server_data(moid: str, ip: str, user: str, password: str, port: int) -> str:
     """
-    Retrieve metrics of a server from the ESXi server host or the VCenter
+    Retrieve data of a server from the ESXi server host or the VCenter
     Args:
-        moid (str): The Managed Object ID of the server to get metrics from
+        moid (str): The Managed Object ID of the server to get data from
         ip (str): The ip of the VCenter or the ESXI server to connect to
         user (str): The username of the VCenter or the ESXI server to connect to
         password (str): The password of the VCenter or the ESXI server to connect to
         port (int): The port to use to connect to the VCenter or the ESXI server
     Returns:
-        str: A string formatted json dump with server metrics (server_metrics_info()), or an error message (result_message())
+        str: A string formatted json dump with server data (server_info()), or an error message (result_message())
     """
     conn = VMwareConnection()
     try:
@@ -24,7 +24,7 @@ def server_metrics(moid: str, ip: str, user: str, password: str, port: int) -> s
         if not host:
             return result_message("Server not found", 404)
 
-        return server_metrics_info(host)
+        return server_info(host)
 
     except vim.fault.InvalidLogin as _:
         return result_message("Invalid credentials", 401)
@@ -35,7 +35,7 @@ def server_metrics(moid: str, ip: str, user: str, password: str, port: int) -> s
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser(description="Récupérer les métriques d'un serveur")
+    parser = ArgumentParser(description="Récupérer les informations d'un serveur")
     parser.add_argument("--moid", required=True, help="Le Managed Object ID du serveur'")
     parser.add_argument("--ip", required=True, help="Adresse IP du serveur ESXi ou du vCenter")
     parser.add_argument("--user", required=True, help="Nom d'utilisateur du serveur ESXi ou du vCenter")
@@ -44,4 +44,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print(server_metrics(args.moid, args.ip, args.user, args.password, args.port))
+    print(server_data(args.moid, args.ip, args.user, args.password, args.port))
