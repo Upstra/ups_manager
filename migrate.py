@@ -6,6 +6,7 @@ from os.path import join as path_join
 from pyVim.task import WaitForTask
 from pyVmomi import vim
 
+from ilo import Ilo
 from vm_ware_connection import VMwareConnection
 
 
@@ -19,10 +20,21 @@ class Restart:
     delay: int
 
 @dataclass
-class Server:
+class IloYaml:
+    ip: str
+    user: str
+    password: str
+
+@dataclass
+class Host:
     name: str
     moid: str
-    destination: str
+    ilo: IloYaml
+
+@dataclass
+class Server:
+    host: Host
+    destination: Host
     shutdown: Shutdown
     restart: Restart
 
@@ -68,9 +80,24 @@ def load_plan_from_yaml(file_path: str) -> tuple[VCenter, Servers]:
     servers = Servers(servers=[None] * len(data['servers']))
     for i, server in enumerate(data['servers']):
         servers.servers[i] = Server(
-            name=server['server']['name'],
-            moid=server['server']['moid'],
-            destination=server['server']['destination'] if 'destination' in server['server'] else None,
+            host=Host(
+                name=server['server']['host']['name'],
+                moid=server['server']['host']['moid'],
+                ilo=IloYaml(
+                    ip=server['server']['host']['ilo']['ip'],
+                    user=server['server']['host']['ilo']['user'],
+                    password=server['server']['host']['ilo']['password'],
+                )
+            ),
+            destination=Host(
+                name=server['server']['destination']['name'],
+                moid=server['server']['destination']['moid'],
+                ilo=IloYaml(
+                    ip=server['server']['destination']['ilo']['ip'],
+                    user=server['server']['destination']['ilo']['user'],
+                    password=server['server']['destination']['ilo']['password'],
+                )
+            ) if 'destination' in server['server'] else None,
             shutdown=Shutdown(
                 vmOrder=[vm['vmMoId'] for vm in server['server']['shutdown']['vmOrder']],
                 delay=server['server']['shutdown']['delay'],
@@ -93,7 +120,7 @@ def turn_on_vms(v_center: VCenter, servers: Servers):
     try:
         conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
         for server in servers.servers:
-            print(f"Allumage du serveur {server.name} ({server.moid})")
+            print(f"Allumage du serveur {server.host.name} ({server.host.moid})")
             vms = server.shutdown.vmOrder
             vms.reverse()
             start_delay = server.restart.delay
@@ -123,18 +150,59 @@ def turn_off_vms(v_center: VCenter, servers: Servers):
     try:
         conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
         for server in servers.servers:
-            print(f"Extinction du serveur {server.name} ({server.moid})")
             vms = server.shutdown.vmOrder
             stop_delay = server.shutdown.delay
-            for vm_moid in vms:
-                vm = conn.get_vm(vm_moid)
-                if not vm:
-                    print(f"{vm_moid} not found")
-                    continue
-                print(f"Powering Off {vm.name}...")
-                task = vm.PowerOff()
-                WaitForTask(task)
-                sleep(stop_delay)
+            current_host = conn.get_host_system(server.host.moid)
+            if not current_host:
+                print(f"Server '{server.host.name}' ({server.host.moid}) not found")
+                continue
+            if current_host.runtime.powerState == vim.VirtualMachinePowerState.poweredOff:
+                print(f"Server '{server.host.name}' ({server.host.moid}) is already off")
+                continue
+
+            is_shutdown_plan = True
+            if server.destination:
+                dist_host = conn.get_host_system(server.destination.moid)
+                if dist_host:
+                    is_shutdown_plan = False
+                else:
+                    print(f"Distant server '{server.destination.name}' ({server.destination.moid}) not found. Launching shutdown plan...")
+
+            if is_shutdown_plan:
+                print(f"Launching shutdown plan for server '{server.host.name}' ({server.host.moid})...")
+                for vm_moid in vms:
+                    vm = conn.get_vm(vm_moid)
+                    if not vm:
+                        print(f"VM with moid '{vm_moid}' couldn't be found")
+                        continue
+                    print(f"Powering Off {vm.name}...")
+                    task = vm.PowerOff()
+                    WaitForTask(task)
+                    sleep(stop_delay)
+            else:
+                print(f"Launching migration plan for server '{server.host.name}' ({server.host.moid})...")
+                for vm_moid in vms:
+                    vm = conn.get_vm(vm_moid)
+                    if not vm:
+                        print(f"VM with moid '{vm_moid}' couldn't be found")
+                        continue
+                    print(f"Powering Off {vm.name}...")
+                    task = vm.PowerOff()
+                    WaitForTask(task)
+                    target_resource_pool = dist_host.parent.resourcePool
+                    task = vm.Migrate(
+                        pool=target_resource_pool,
+                        host=dist_host,
+                        priority=vim.VirtualMachine.MovePriority.defaultPriority
+                    )
+                    WaitForTask(task)
+                    sleep(stop_delay)
+
+            ilo = Ilo(args.ip, args.user, args.password)
+            if ilo.stop_server():
+                print(f"Server '{server.host.name}' ({server.host.moid}) is fully migrated")
+            else:
+                print(f"Couldn't stop server '{server.host.name}' ({server.host.moid})")
     except Exception as err:
         print(err)
     finally:
@@ -152,7 +220,7 @@ def migrate_vms(v_center: VCenter, servers: Servers):
     try:
         conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
         for server in servers.servers:
-            print(f"Migration du serveur {server.name} ({server.moid})")
+            print(f"Migration du serveur {server.host.name} ({server.host.moid})")
             vms = server.shutdown.vmOrder
             stop_delay = server.shutdown.delay
             for vm_moid in vms:
@@ -163,7 +231,7 @@ def migrate_vms(v_center: VCenter, servers: Servers):
                 print(f"Powering Off {vm.name}...")
                 task = vm.PowerOff()
                 WaitForTask(task)
-                target_host = conn.get_host_system(server.destination)
+                target_host = conn.get_host_system(server.destination.moid)
                 target_resource_pool = target_host.parent.resourcePool
                 task = vm.Migrate(
                     pool=target_resource_pool,

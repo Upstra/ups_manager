@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: ./turn_on.sh --moid <MOID> --ip <IP> --user <USER> --password <PASS> [--port <PORT>]
+# Usage: ./vm_start.sh --moid <MOID> --ip <IP> --user <USER> --password <PASS> [--port <PORT>]
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -29,7 +29,7 @@ if ! source .venv/bin/activate; then
     exit 1
 fi
 
-CMD="python turn_on.py --moid \"$MOID\" --ip \"$IP\" --user \"$USER\" --password \"$PASSWORD\""
+CMD="python vm_start.py --moid \"$MOID\" --ip \"$IP\" --user \"$USER\" --password \"$PASSWORD\""
 if [[ -n "$PORT" ]]; then
     CMD+=" --port \"$PORT\""
 fi

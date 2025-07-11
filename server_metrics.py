@@ -18,14 +18,6 @@ if __name__ == "__main__":
         conn.connect(args.ip, args.user, args.password, port=args.port)
         host = conn.get_host_system(args.moid)
         if host:
-            print("\tFirewall")
-            firewall = host.config.firewall
-            [print(f"{attr}: {type(getattr(firewall, attr))}") for attr in dir(firewall) if attr[0] != '_' and attr[0].islower()]
-
-            print("\tConnectionState")
-            connectionState = host.runtime.connectionState
-            [print(f"{attr}: {type(getattr(connectionState, attr))}") for attr in dir(connectionState) if attr[0] != '_' and attr[0].islower()]
-
             print(json_server_info(host))
         else:
             print(error_message("Server not found", 404))

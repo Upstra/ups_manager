@@ -6,9 +6,20 @@ vCenter:
 
 servers:
   - server:
-      name: server_name
-      moid: srv1_moid
-      destination: srv2_moid
+      host:
+        name: server_name
+        moid: srv1_moid
+        ilo:
+          ip: 172.2.3.4
+          user: user
+          password: password
+      destination:
+        name: dist_name
+        moid: srv2_moid
+        ilo:
+          ip: 172.2.3.4
+          user: user
+          password: password
       shutdown:
         vmOrder:
           - vmMoId: vm1
