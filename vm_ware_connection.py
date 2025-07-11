@@ -99,20 +99,32 @@ def json_server_info(host: vim.HostSystem) -> str:
     """
     json_object = {
         "name": host.name,
+        "ip": host.config.network.vnic[0].spec.ip.ipAddress,
+        "powerState": host.runtime.powerState,
+        "vCenterIp": host.summary.managementServerIp,
         "overallStatus": host.overallStatus,
         "cpuCores": host.hardware.cpuInfo.numCpuCores,
         "ramTotal": int(host.hardware.memorySize / (1024 ** 3)),
         "rebootRequired": host.summary.rebootRequired,
-        "managementServerIp": host.summary.managementServerIp,
-        "maxEVCModeKey": host.summary.maxEVCModeKey,
         "cpuUsageMHz": host.summary.quickStats.overallCpuUsage,
         "ramUsageMB": host.summary.quickStats.overallMemoryUsage,
-        "availablePMemCapacity": host.summary.quickStats.availablePMemCapacity,
-        "distributedCpuFairness": host.summary.quickStats.distributedCpuFairness,
-        "distributedMemoryFairness": host.summary.quickStats.distributedMemoryFairness,
         "uptime": host.summary.quickStats.uptime,
+        "boottime": host.runtime.bootTime.isoformat() if host.runtime.bootTime else "",
         "cluster": host.parent.name
     }
+    if host.capability:
+        json_object["maxHostRunningVms"] = host.capability.maxHostRunningVms
+        json_object["maxHostSupportedVcpus"] = host.capability.maxHostSupportedVcpus
+        json_object["maxMemMBPerFtVm"] = host.capability.maxMemMBPerFtVm
+        json_object["maxNumDisksSVMotion"] = host.capability.maxNumDisksSVMotion
+        json_object["maxRegisteredVMs"] = host.capability.maxRegisteredVMs
+        json_object["maxRunningVMs"] = host.capability.maxRunningVMs
+        json_object["maxSupportedVcpus"] = host.capability.maxSupportedVcpus
+        json_object["maxSupportedVmMemory"] = host.capability.maxSupportedVmMemory
+        json_object["maxVcpusPerFtVm"] = host.capability.maxVcpusPerFtVm
+        json_object["quickBootSupported"] = host.capability.quickBootSupported
+        json_object["rebootSupported"] = host.capability.rebootSupported
+        json_object["shutdownSupported"] = host.capability.shutdownSupported
     return json_dumps(json_object, indent=2)
 
 

@@ -10,21 +10,21 @@ from vm_ware_connection import VMwareConnection
 
 
 @dataclass
-class VMAction:
-    order: list[str]
+class Shutdown:
+    vmOrder: list[str]
     delay: int
 
 @dataclass
-class VMs:
-    shutdown: VMAction
-    restart: VMAction
+class Restart:
+    delay: int
 
 @dataclass
 class Server:
     name: str
     moid: str
     destination: str
-    vms: VMs
+    shutdown: Shutdown
+    restart: Restart
 
 @dataclass
 class Servers:
@@ -71,15 +71,12 @@ def load_plan_from_yaml(file_path: str) -> tuple[VCenter, Servers]:
             name=server['server']['name'],
             moid=server['server']['moid'],
             destination=server['server']['destination'] if 'destination' in server['server'] else None,
-            vms=VMs(
-                shutdown=VMAction(
-                    order=[vm['vmMoId'] for vm in server['server']['vms']['shutdown']['order']],
-                    delay=server['server']['vms']['shutdown']['delay']
-                ),
-                restart=VMAction(
-                    order=[vm['vmMoId'] for vm in server['server']['vms']['restart']['order']],
-                    delay=server['server']['vms']['restart']['delay']
-                )
+            shutdown=Shutdown(
+                vmOrder=[vm['vmMoId'] for vm in server['server']['shutdown']['vmOrder']],
+                delay=server['server']['shutdown']['delay'],
+            ),
+            restart=Restart(
+                delay=server['server']['restart']['delay'],
             )
         )
     return v_center, servers
