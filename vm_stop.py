@@ -16,7 +16,7 @@ def vm_stop(moid: str, ip: str, user: str, password: str, port: int) -> str:
         password (str): The password of the VCenter or the ESXI server to connect to
         port (int): The port to use to connect to the VCenter or the ESXI server
     Returns:
-        str: A string formatted json dump of the result message
+        str: A string formatted json dump of the result message. See result_message() function in dot.py
     """
     conn = VMwareConnection()
     try:
