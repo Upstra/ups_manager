@@ -1,22 +1,20 @@
 #!/bin/bash
 
-# Usage: ./turn_off.sh --moid <MOID> --ip <IP> --user <USER> --password <PASS> [--port <PORT>]
+# Usage: ./server_stop.sh --ip <IP> --user <USER> --password <PASS>
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --moid) MOID="$2"; shift ;;
         --ip) IP="$2"; shift ;;
         --user) USER="$2"; shift ;;
         --password) PASSWORD="$2"; shift ;;
-        --port) PORT="$2"; shift ;;
         *) echo "Unknown parameter: $1" ; exit 1 ;;
     esac
     shift
 done
 
-if [[ -z "$MOID" || -z "$IP" || -z "$USER" || -z "$PASSWORD" ]]; then
+if [[ -z "$IP" || -z "$USER" || -z "$PASSWORD" ]]; then
     echo "ERROR : Missing parameter"
-    echo "Usage: $0 --moid <MOID> --ip <IP> --user <USER> --password <PASS> [--port <PORT>]"
+    echo "Usage: $0 --ip <IP> --user <USER> --password <PASS>"
     exit 1
 fi
 
@@ -29,8 +27,4 @@ if ! source .venv/bin/activate; then
     exit 1
 fi
 
-CMD="python turn_off.py --moid \"$MOID\" --ip \"$IP\" --user \"$USER\" --password \"$PASSWORD\""
-if [[ -n "$PORT" ]]; then
-    CMD+=" --port \"$PORT\""
-fi
-eval "$CMD"
+python server_stop.py --ip "$IP" --user "$USER" --password "$PASSWORD"

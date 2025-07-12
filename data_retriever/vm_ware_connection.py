@@ -1,75 +1,6 @@
-from json import dumps as json_dumps
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
 import ssl
-
-
-def error_message(message: str, http_code = 400) -> str:
-    """
-    Dump a json formatted error message
-    Args:
-        message (str): The message explaining the error
-        http_code (int): The HTTP response code corresponding to the error (defaults to 400)
-    Returns:
-        str: A string formatted json dump of the error message
-    """
-    return json_dumps({
-        "error": {
-            "message": message,
-            "httpCode": http_code
-        }
-    }, indent=2)
-
-def json_vms_info(vms: list[vim.VirtualMachine]) -> str:
-    """
-    Format VMs data to a json dictionary
-    Args:
-        vms (list[vim.VirtualMachine]): A list of VM object
-    Returns:
-        str: A string formatted json dump of the vms data
-    """
-    json_vms = {"vms": []}
-    for vm in vms:
-        json_vms["vms"].append({
-            "name": vm.name,
-            "moid": vm._moId,
-            "esxiHostName": vm.runtime.host.name if vm.runtime.host else "",
-            "esxiHostMoid": vm.runtime.host._moId if vm.runtime.host else "",
-            "ip": vm.summary.guest.ipAddress if vm.summary.guest and vm.summary.guest.ipAddress else "",
-            "guestOs": vm.config.guestFullName,
-            "guestFamily": vm.guest.guestFamily if vm.guest else "",
-            "version": vm.config.version,
-            "createDate": vm.config.createDate.isoformat() if vm.config.createDate else "",
-            "numCoresPerSocket": vm.config.hardware.numCoresPerSocket,
-            "numCPU": vm.config.hardware.numCPU
-        })
-    return json_dumps(json_vms, indent=2)
-
-def json_metrics_info(vm: vim.VirtualMachine) -> str:
-    """
-    Format VM metrics data to a json dictionary
-    Args:
-        vm (vim.VirtualMachine): The VM object where metrics are retrieved
-    Returns:
-        str: A string formatted json dump of the metrics data
-    """
-    return json_dumps({
-        "powerState": vm.runtime.powerState,
-        "guestState": vm.guest.guestState if vm.guest else "",
-        "connectionState": vm.runtime.connectionState,
-        "guestHeartbeatStatus": vm.guestHeartbeatStatus,
-        "overallStatus": vm.overallStatus,
-        "overallCpuUsage": vm.summary.quickStats.overallCpuUsage if vm.summary.quickStats else 0,
-        "maxCpuUsage": vm.runtime.maxCpuUsage,
-        "guestMemoryUsage": vm.summary.quickStats.guestMemoryUsage if vm.summary.quickStats else 0,
-        "maxMemoryUsage": vm.runtime.maxMemoryUsage,
-        "uptimeSeconds": vm.summary.quickStats.uptimeSeconds if vm.summary.quickStats else 0,
-        "usedStorage": vm.summary.storage.committed if vm.summary.storage else 0,
-        "totalStorage": (vm.summary.storage.committed + vm.summary.storage.uncommitted) if vm.summary.storage else 0,
-        "bootTime": vm.runtime.bootTime.isoformat() if vm.runtime.bootTime else "",
-        "isMigrating": vm.runtime.vmFailoverInProgress,
-        "swappedMemory": vm.summary.quickStats.swappedMemory if vm.summary.quickStats else 0
-    }, indent=2)
 
 
 class VMwareConnection:
@@ -182,4 +113,3 @@ class VMwareConnection:
                     if host._moId == esxi_moid:
                         return host
         return None
-
