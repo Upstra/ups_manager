@@ -113,4 +113,3 @@ class VMwareConnection:
                     if host._moId == esxi_moid:
                         return host
         return None
-

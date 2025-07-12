@@ -19,7 +19,7 @@ def result_message(message: str, http_code) -> str:
     }, indent=2)
 
 
-def vms_info(vms: list[vim.VirtualMachine]) -> str:
+def vms_list_info(vms: list[vim.VirtualMachine]) -> str:
     """
     Format VMs data to a json dictionary
     Args:
