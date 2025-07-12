@@ -9,6 +9,8 @@ from redis import Redis
 
 from data_retriever.ilo import Ilo
 from data_retriever.vm_ware_connection import VMwareConnection
+from server_start import server_start
+from server_stop import server_stop
 
 
 @dataclass
@@ -167,32 +169,31 @@ def shutdown(v_center: VCenter, servers: Servers):
                 dist_host = conn.get_host_system(server.destination.moid)
                 if dist_host:
                     if dist_host.runtime.powerState == vim.HostSystem.PowerState.poweredOff:
-                        dist_ilo = Ilo(dist_host.ip, dist_host.user, dist_host.password)
-                    is_shutdown_plan = False
+                        start_result = server_start(dist_host.ip, dist_host.user, dist_host.password)
+                        if start_result['result']['httpCode'] != 200:
+                            print(f"Distant server '{server.destination.name}' ({server.destination.moid}) is off and won't turn on : {start_result['result']['message']}")
+                        else:
+                            is_shutdown_plan = False
+                    else:
+                        is_shutdown_plan = False
                 else:
-                    print(f"Distant server '{server.destination.name}' ({server.destination.moid}) not found. Launching shutdown plan...")
+                    print(f"Distant server '{server.destination.name}' ({server.destination.moid}) not found")
 
             if is_shutdown_plan:
                 print(f"Launching shutdown plan for server '{server.host.name}' ({server.host.moid})...")
-                for vm_moid in vms:
-                    vm = conn.get_vm(vm_moid)
-                    if not vm:
-                        print(f"VM with moid '{vm_moid}' couldn't be found")
-                        continue
-                    print(f"Powering Off {vm.name}...")
-                    task = vm.PowerOff()
-                    WaitForTask(task)
-                    sleep(stop_delay)
             else:
-                print(f"Launching migration plan for server '{server.host.name}' ({server.host.moid})...")
-                for vm_moid in vms:
-                    vm = conn.get_vm(vm_moid)
-                    if not vm:
-                        print(f"VM with moid '{vm_moid}' couldn't be found")
-                        continue
-                    print(f"Powering Off {vm.name}...")
-                    task = vm.PowerOff()
-                    WaitForTask(task)
+                print(f"Lannching migration plan for server '{server.host.name}' ({server.host.moid})...")
+
+            for vm_moid in vms:
+                vm = conn.get_vm(vm_moid)
+                if not vm:
+                    print(f"VM with moid '{vm_moid}' couldn't be found")
+                    continue
+                print(f"Powering Off {vm.name}...")
+                task = vm.PowerOff()
+                WaitForTask(task)
+
+                if not is_shutdown_plan:
                     target_resource_pool = dist_host.parent.resourcePool
                     task = vm.Migrate(
                         pool=target_resource_pool,
@@ -200,10 +201,11 @@ def shutdown(v_center: VCenter, servers: Servers):
                         priority=vim.VirtualMachine.MovePriority.defaultPriority
                     )
                     WaitForTask(task)
-                    sleep(stop_delay)
 
-            ilo = Ilo(args.ip, args.user, args.password)
-            if ilo.stop_server():
+                sleep(stop_delay)
+
+            stop_result = server_stop(server.host.ilo.ip, server.host.ilo.user, server.host.ilo.password)
+            if stop_result['result']['httpCode'] != 200:
                 print(f"Server '{server.host.name}' ({server.host.moid}) is fully migrated")
             else:
                 print(f"Couldn't stop server '{server.host.name}' ({server.host.moid})")
