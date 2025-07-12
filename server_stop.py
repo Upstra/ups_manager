@@ -1,11 +1,11 @@
 from argparse import ArgumentParser
 from requests.exceptions import RequestException, HTTPError
 
-from data_retriever.dto import result_message
+from data_retriever.dto import result_message, output
 from data_retriever.ilo import Ilo, PayloadException
 
 
-def server_stop(ip: str, user: str, password: str) -> str:
+def server_stop(ip: str, user: str, password: str) -> dict:
     """
     Stop a server
     Args:
@@ -13,7 +13,7 @@ def server_stop(ip: str, user: str, password: str) -> str:
         user (str): The username of the Ilo of the server
         password (str): The password of the Ilo of the server
     Returns:
-        str: A string formatted json dump of the result message. See result_message() function in dto.py
+        dict: A dictionary formatted for json dump containing the result message. See result_message() function in dto.py
     """
     ilo = Ilo(ip, user, password)
     try:
@@ -45,4 +45,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print(server_stop(args.ip, args.user, args.password))
+    output(server_stop(args.ip, args.user, args.password))

@@ -2,11 +2,11 @@ from argparse import ArgumentParser
 from pyVmomi import vim
 from pyVim.task import WaitForTask
 
-from data_retriever.dto import result_message
+from data_retriever.dto import result_message, output
 from data_retriever.vm_ware_connection import VMwareConnection
 
 
-def vm_stop(moid: str, ip: str, user: str, password: str, port: int) -> str:
+def vm_stop(moid: str, ip: str, user: str, password: str, port: int) -> dict:
     """
     Stop a VM
     Args:
@@ -16,7 +16,7 @@ def vm_stop(moid: str, ip: str, user: str, password: str, port: int) -> str:
         password (str): The password of the VCenter or the ESXI server to connect to
         port (int): The port to use to connect to the VCenter or the ESXI server
     Returns:
-        str: A string formatted json dump of the result message. See result_message() function in dto.py
+        dict: A dictionary formatted for json dump containing the result message. See result_message() function in dto.py
     """
     conn = VMwareConnection()
     try:
@@ -49,4 +49,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print(vm_stop(args.moid, args.ip, args.user, args.password, args.port))
+    output(vm_stop(args.moid, args.ip, args.user, args.password, args.port))

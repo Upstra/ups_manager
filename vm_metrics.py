@@ -1,11 +1,11 @@
 from argparse import ArgumentParser
 from pyVmomi import vim
 
-from data_retriever.dto import vm_metrics_info, result_message
+from data_retriever.dto import vm_metrics_info, result_message, output
 from data_retriever.vm_ware_connection import VMwareConnection
 
 
-def vm_metrics(moid: str, ip: str, user: str, password: str, port: int) -> str:
+def vm_metrics(moid: str, ip: str, user: str, password: str, port: int) -> dict:
     """
     Retrieve metrics of a VM from a VCenter or an ESXi server
     Args:
@@ -15,7 +15,7 @@ def vm_metrics(moid: str, ip: str, user: str, password: str, port: int) -> str:
         password (str): The password of the VCenter or the ESXI server to connect to
         port (int): The port to use to connect to the VCenter or the ESXI server
     Returns:
-        str: A string formatted json dump with VM metrics (vm_metrics_info()), or an error message (result_message())
+        dict: A dictionary formatted for json dump containing the VM metrics (vm_metrics_info()), or an error message (result_message())
     """
     conn = VMwareConnection()
     try:
@@ -44,4 +44,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print(vm_metrics(args.moid, args.ip, args.user, args.password, args.port))
+    output(vm_metrics(args.moid, args.ip, args.user, args.password, args.port))

@@ -1,31 +1,40 @@
-from json import dumps as json_dumps
 from pyVmomi import vim
+from json import dumps as json_dumps
 
 
-def result_message(message: str, http_code) -> str:
+def output(json_dict: dict):
+    """
+    Send dictionary to output
+    Args:
+        json_dict (dict): Json formatted dictionary to send
+    """
+    print(json_dumps(json_dict, indent=2))
+
+
+def result_message(message: str, http_code) -> dict:
     """
     Dump a json formatted result message
     Args:
         message (str): The message explaining the result of the command
         http_code (int): The HTTP response code corresponding to the result
     Returns:
-        str: A string formatted json dump of the result message
+        dict: A dictionary formatted for json dump containing the result message
     """
-    return json_dumps({
+    return {
         "result": {
             "message": message,
             "httpCode": http_code
         }
-    }, indent=2)
+    }
 
 
-def vms_list_info(vms: list[vim.VirtualMachine]) -> str:
+def vms_list_info(vms: list[vim.VirtualMachine]) -> dict:
     """
     Format VMs data to a json dictionary
     Args:
         vms (list[vim.VirtualMachine]): A list of VM object
     Returns:
-        str: A string formatted json dump of the vms data
+        dict: A dictionary formatted for json dump containing the vms data
     """
     vm_list = [None] * len(vms)
 
@@ -48,16 +57,16 @@ def vms_list_info(vms: list[vim.VirtualMachine]) -> str:
             json_object["esxiHostName"] = ""
             json_object["esxiHostMoid"] = ""
         vm_list[i] = json_object
-    return json_dumps({"vms": vm_list}, indent=2)
+    return {"vms": vm_list}
 
 
-def vm_metrics_info(vm: vim.VirtualMachine) -> str:
+def vm_metrics_info(vm: vim.VirtualMachine) -> dict:
     """
     Format VM metrics data to a json dictionary
     Args:
         vm (vim.VirtualMachine): The VM object where metrics are retrieved
     Returns:
-        str: A string formatted json dump of the metrics data
+        dict: A dictionary formatted for json dump containing the metrics data
     """
     json_object = {
         "powerState": vm.runtime.powerState,
@@ -86,18 +95,18 @@ def vm_metrics_info(vm: vim.VirtualMachine) -> str:
     else:
         json_object["usedStorage"] = 0
         json_object["totalStorage"] = 0
-    return json_dumps(json_object, indent=2)
+    return json_object
 
 
-def server_info(host: vim.HostSystem) -> str:
+def server_info(host: vim.HostSystem) -> dict:
     """
     Format Server data to a json dictionary
     Args:
         host (vim.HostSystem): The Host object where server data are retrieved
     Returns:
-        str: A string formatted json dump of the server data
+        dict: A dictionary formatted for json dump containing the server data
     """
-    json_object = {
+    return {
         "name": host.name,
         "vCenterIp": host.summary.managementServerIp,
         "cluster": host.parent.name if host.parent else "",
@@ -109,19 +118,18 @@ def server_info(host: vim.HostSystem) -> str:
         "cpuMHz": host.hardware.cpuInfo.hz / 1000000,
         "ramTotal": int(host.hardware.memorySize / (1024 ** 3)),
     }
-    return json_dumps(json_object, indent=2)
 
 
-def server_metrics_info(host: vim.HostSystem) -> str:
+def server_metrics_info(host: vim.HostSystem) -> dict:
     """
     Format Server metrics data to a json dictionary
     Args:
        host (vim.HostSystem): The Host object where metrics are retrieved
     Returns:
-       str: A string formatted json dump of the metrics data
+       dict: A dictionary formatted for json dump containing the metrics data
     """
     cpu_usage = (host.summary.quickStats.overallCpuUsage / ((host.hardware.cpuInfo.hz / 1000000) * host.hardware.cpuInfo.numCpuCores)) * 100
-    json_object = {
+    return {
         "powerState": host.runtime.powerState,
         "overallStatus": host.overallStatus,
         "rebootRequired": host.summary.rebootRequired,
@@ -130,4 +138,3 @@ def server_metrics_info(host: vim.HostSystem) -> str:
         "uptime": host.summary.quickStats.uptime,
         "boottime": host.runtime.bootTime.isoformat() if host.runtime.bootTime else "",
     }
-    return json_dumps(json_object, indent=2)

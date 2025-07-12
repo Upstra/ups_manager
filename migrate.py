@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from os.path import join as path_join
 from pyVim.task import WaitForTask
 from pyVmomi import vim
+from redis import Redis
 
 from data_retriever.ilo import Ilo
 from data_retriever.vm_ware_connection import VMwareConnection
@@ -146,6 +147,7 @@ def shutdown(v_center: VCenter, servers: Servers):
         v_center (VCenter): The vCenter that orchestrates the migration plan
         servers (Servers): The migration plan for each server
     """
+    redis = Redis()
     conn = VMwareConnection()
     try:
         conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)

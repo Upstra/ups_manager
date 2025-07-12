@@ -1,11 +1,11 @@
 from argparse import ArgumentParser
 from pyVmomi import vim
 
-from data_retriever.dto import result_message, server_info
+from data_retriever.dto import result_message, server_info, output
 from data_retriever.vm_ware_connection import VMwareConnection
 
 
-def server_data(moid: str, ip: str, user: str, password: str, port: int) -> str:
+def server_data(moid: str, ip: str, user: str, password: str, port: int) -> dict:
     """
     Retrieve data of a server from the ESXi server host or the VCenter
     Args:
@@ -15,7 +15,7 @@ def server_data(moid: str, ip: str, user: str, password: str, port: int) -> str:
         password (str): The password of the VCenter or the ESXI server to connect to
         port (int): The port to use to connect to the VCenter or the ESXI server
     Returns:
-        str: A string formatted json dump with server data (server_info()), or an error message (result_message())
+        dict: A dictionary formatted for json dump containing the server data (server_info()), or an error message (result_message())
     """
     conn = VMwareConnection()
     try:
@@ -44,4 +44,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print(server_data(args.moid, args.ip, args.user, args.password, args.port))
+    output(server_data(args.moid, args.ip, args.user, args.password, args.port))
