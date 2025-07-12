@@ -6,11 +6,12 @@ from data_retriever.dto import result_message, output
 from data_retriever.vm_ware_connection import VMwareConnection
 
 
-def vm_migration(vm: vim.VirtualMachine, target_host: vim.HostSystem, target_moid: str) -> dict:
+def vm_migration(vm: vim.VirtualMachine, vm_name: str, target_host: vim.HostSystem, target_moid: str) -> dict:
     """
     Migrate a VM to a different host
     Args:
         vm (vim.VirtualMachine): The `VirtualMachine` object representing the VM to migrate
+        vm_name (str): The name of the VM to migrate for logging
         target_host (vim.HostSystem): The `HostSystem` object representing the server to migrate to
         target_moid (str): The Managed Object ID of the server to migrate to
     Returns:
@@ -18,13 +19,13 @@ def vm_migration(vm: vim.VirtualMachine, target_host: vim.HostSystem, target_moi
     """
     try:
         if not vm:
-            return result_message("VM not found", 404)
+            return result_message(f"VM '{vm_name}' not found", 404)
         if vm.runtime.host._moId == target_moid:
-            return result_message("VM is already on this server", 403)
+            return result_message(f"VM '{vm_name}' is already on this server", 403)
         if not target_host:
-            return result_message("Target server not found", 404)
+            return result_message(f"Target server '{target_moid}' not found", 404)
         if target_host.runtime.powerState == vim.HostSystem.PowerState.poweredOff:
-            return result_message("Target server is off", 403)
+            return result_message(f"Target server '{target_moid}' is off. Turn it on before launching a migration", 403)
 
         if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
             task = vm.PowerOff()
@@ -39,7 +40,7 @@ def vm_migration(vm: vim.VirtualMachine, target_host: vim.HostSystem, target_moi
         WaitForTask(task)
         task = vm.PowerOn()
         WaitForTask(task)
-        return result_message("VM migrated successfully", 200)
+        return result_message(f"VM '{vm_name}' migrated successfully", 200)
 
     except Exception as err:
         return result_message(str(err), 400)

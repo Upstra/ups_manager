@@ -12,6 +12,7 @@ from data_retriever.vm_ware_connection import VMwareConnection
 from server_start import server_start
 from server_stop import server_stop
 from vm_migration import vm_migration
+from vm_stop import vm_stop
 
 
 @dataclass
@@ -143,6 +144,33 @@ def turn_on_vms(v_center: VCenter, servers: Servers):
         conn.disconnect()
 
 
+def get_distant_host(conn: VMwareConnection, server: Server) -> vim.HostSystem:
+    """
+    Get the distant server if set and on
+    Args:
+        conn (VMwareConnection): The connection to the vCenter that orchestrates the migration plan
+        server (Server): The `Server` object that represents the migration plan for one server
+    Returns:
+        vim.HostSystem: The `HostSystem` object representing the distant server, or None if the server is unavailable
+    """
+    if not server.destination:
+        print(f"Distant server not set")
+        return None
+
+    dist_host = conn.get_host_system(server.destination.moid)
+    if not dist_host:
+        print(f"Distant server '{server.destination.name}' ({server.destination.moid}) not found")
+        return None
+
+    if dist_host.runtime.powerState == vim.HostSystem.PowerState.poweredOff:
+        start_result = server_start(dist_host.ip, dist_host.user, dist_host.password)
+        if start_result['result']['httpCode'] != 200:
+            print(f"Distant server '{server.destination.name}' ({server.destination.moid}) is off and won't turn on : {start_result['result']['message']}")
+            return None
+
+    return dist_host
+
+
 def shutdown(v_center: VCenter, servers: Servers):
     """
     Launch the shutdown plan of all servers specified in `servers
@@ -165,38 +193,20 @@ def shutdown(v_center: VCenter, servers: Servers):
                 print(f"Server '{server.host.name}' ({server.host.moid}) is already off")
                 continue
 
-            is_shutdown_plan = True
-            if server.destination:
-                dist_host = conn.get_host_system(server.destination.moid)
-                if dist_host:
-                    if dist_host.runtime.powerState == vim.HostSystem.PowerState.poweredOff:
-                        start_result = server_start(dist_host.ip, dist_host.user, dist_host.password)
-                        if start_result['result']['httpCode'] != 200:
-                            print(f"Distant server '{server.destination.name}' ({server.destination.moid}) is off and won't turn on : {start_result['result']['message']}")
-                        else:
-                            is_shutdown_plan = False
-                    else:
-                        is_shutdown_plan = False
-                else:
-                    print(f"Distant server '{server.destination.name}' ({server.destination.moid}) not found")
-
-            if is_shutdown_plan:
-                print(f"Launching shutdown plan for server '{server.host.name}' ({server.host.moid})...")
+            dist_host = get_distant_host(conn, server)
+            if dist_host:
+                print(f"Launching migration plan for server '{server.host.name}' ({server.host.moid})...")
             else:
-                print(f"Lannching migration plan for server '{server.host.name}' ({server.host.moid})...")
+                print(f"Launching shutdown plan for server '{server.host.name}' ({server.host.moid})...")
 
             for vm_moid in vms:
                 vm = conn.get_vm(vm_moid)
-                if is_shutdown_plan:
-                    if not vm:
-                        print(f"VM with moid '{vm_moid}' couldn't be found")
-                        continue
-                    print(f"Powering Off {vm.name}...")
-                    task = vm.PowerOff()
-                    WaitForTask(task)
+                if dist_host:
+                    migration_result = vm_migration(vm, vm_moid, dist_host, server.destination.moid)
+                    print(migration_result['result']['message'])
                 else:
-                    vm_migration(vm, dist_host, server.destination.moid)
-
+                    stop_result = vm_stop(vm, vm_moid)
+                    print(stop_result['result']['message'])
                 sleep(stop_delay)
 
             stop_result = server_stop(server.host.ilo.ip, server.host.ilo.user, server.host.ilo.password)

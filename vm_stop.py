@@ -6,9 +6,32 @@ from data_retriever.dto import result_message, output
 from data_retriever.vm_ware_connection import VMwareConnection
 
 
-def vm_stop(moid: str, ip: str, user: str, password: str, port: int) -> dict:
+def vm_stop(vm: vim.VirtualMachine, name: str) -> dict:
     """
     Stop a VM
+    Args:
+        vm (vim.VirtualMachine): The `VirtualMachine` object representing the VM to stop
+        name (str): The name of the VM to stop for logging
+    Returns:
+        dict: A dictionary formatted for json dump containing the result message. See result_message() function in dto.py
+    """
+    try:
+        if not vm:
+            return result_message(f"VM '{name}' not found", 404)
+        if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOff:
+            return result_message(f"VM '{name}' is already off", 403)
+
+        task = vm.PowerOff()
+        WaitForTask(task)
+        return result_message(f"VM '{name}' has been successfully stopped", 200)
+
+    except Exception as err:
+        return result_message(str(err), 400)
+
+
+def complete_vm_stop(moid: str, ip: str, user: str, password: str, port: int) -> dict:
+    """
+    Stop a VM by creating a connection to the VCenter or the ESXI server
     Args:
         moid (str): The Managed Object ID of the VM to stop
         ip (str): The ip of the VCenter or the ESXI server to connect to
@@ -22,14 +45,8 @@ def vm_stop(moid: str, ip: str, user: str, password: str, port: int) -> dict:
     try:
         conn.connect(ip, user, password, port=port)
         vm = conn.get_vm(moid)
-        if not vm:
-            return result_message("VM not found", 404)
-        if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOff:
-            return result_message("VM is already off", 403)
 
-        task = vm.PowerOff()
-        WaitForTask(task)
-        return result_message("VM has been successfully stopped", 200)
+        return vm_stop(vm, moid)
 
     except vim.fault.InvalidLogin as _:
         return result_message("Invalid credentials", 401)
@@ -49,4 +66,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    output(vm_stop(args.moid, args.ip, args.user, args.password, args.port))
+    output(complete_vm_stop(args.moid, args.ip, args.user, args.password, args.port))

@@ -19,7 +19,7 @@ def server_stop(ip: str, user: str, password: str) -> dict:
     try:
         power_status = ilo.get_server_status()
         if power_status == "OFF":
-            return result_message("Server is already OFF", 403)
+            return result_message("Server is already off", 403)
         elif power_status != "ON":
             return result_message(f"Power Status unsupported: {power_status}", 403)
 
