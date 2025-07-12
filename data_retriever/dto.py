@@ -101,26 +101,14 @@ def server_info(host: vim.HostSystem) -> str:
         "name": host.name,
         "vCenterIp": host.summary.managementServerIp,
         "cluster": host.parent.name if host.parent else "",
-        "model": host.hardware.systemInfo.model,
         "vendor": host.hardware.systemInfo.vendor,
-        "biosVendor": host.hardware.biosInfo.vendor
+        "model": host.hardware.systemInfo.model,
+        "ip": host.config.network.vnic[0].spec.ip.ipAddress if host.config and host.config.network.vnic else "",
+        "cpuCores": host.hardware.cpuInfo.numCpuCores,
+        "cpuThreads": host.hardware.cpuInfo.numCpuThreads,
+        "cpuMHz": host.hardware.cpuInfo.hz / 1000000,
+        "ramTotal": int(host.hardware.memorySize / (1024 ** 3)),
     }
-    if host.config:
-        json_object["ip"] = host.config.network.vnic[0].spec.ip.ipAddress if host.config.network.vnic else ""
-        json_object["firewall"] = host.config.firewall.defaultPolicy.incomingBlocked if host.config.firewall else None
-    if host.capability:
-        json_object["maxHostRunningVms"] = host.capability.maxHostRunningVms
-        json_object["maxHostSupportedVcpus"] = host.capability.maxHostSupportedVcpus
-        json_object["maxMemMBPerFtVm"] = host.capability.maxMemMBPerFtVm
-        json_object["maxNumDisksSVMotion"] = host.capability.maxNumDisksSVMotion
-        json_object["maxRegisteredVMs"] = host.capability.maxRegisteredVMs
-        json_object["maxRunningVMs"] = host.capability.maxRunningVMs
-        json_object["maxSupportedVcpus"] = host.capability.maxSupportedVcpus
-        json_object["maxSupportedVmMemory"] = host.capability.maxSupportedVmMemory
-        json_object["maxVcpusPerFtVm"] = host.capability.maxVcpusPerFtVm
-        json_object["quickBootSupported"] = host.capability.quickBootSupported
-        json_object["rebootSupported"] = host.capability.rebootSupported
-        json_object["shutdownSupported"] = host.capability.shutdownSupported
     return json_dumps(json_object, indent=2)
 
 
@@ -132,18 +120,14 @@ def server_metrics_info(host: vim.HostSystem) -> str:
     Returns:
        str: A string formatted json dump of the metrics data
     """
+    cpu_usage = (host.summary.quickStats.overallCpuUsage / ((host.hardware.cpuInfo.hz / 1000000) * host.hardware.cpuInfo.numCpuCores)) * 100
     json_object = {
         "powerState": host.runtime.powerState,
         "overallStatus": host.overallStatus,
-        "cpuCores": host.hardware.cpuInfo.numCpuCores,
-        "ramTotal": int(host.hardware.memorySize / (1024 ** 3)),
         "rebootRequired": host.summary.rebootRequired,
-        "cpuUsageMHz": host.summary.quickStats.overallCpuUsage,
+        "cpuUsagePercent": cpu_usage,
         "ramUsageMB": host.summary.quickStats.overallMemoryUsage,
         "uptime": host.summary.quickStats.uptime,
         "boottime": host.runtime.bootTime.isoformat() if host.runtime.bootTime else "",
-        "cpuHz": host.hardware.cpuInfo.hz,
-        "numCpuCores": host.hardware.cpuInfo.numCpuCores,
-        "numCpuThreads": host.hardware.cpuInfo.numCpuThreads
     }
     return json_dumps(json_object, indent=2)

@@ -1,6 +1,5 @@
 from argparse import ArgumentParser
-
-from requests.exceptions import RequestException
+from requests.exceptions import RequestException, HTTPError
 
 from data_retriever.dto import result_message
 from data_retriever.ilo import Ilo, PayloadException
@@ -28,7 +27,10 @@ def server_stop(ip: str, user: str, password: str) -> str:
         return result_message("Server has been successfully stopped", 200)
 
     except RequestException as e:
-        return result_message(f"Error sending requests: {e}", 400)
+        if isinstance(e, HTTPError) and e.response is not None:
+            return result_message(str(e), e.response.status_code)
+        else:
+            return result_message(f"Error sending requests: {e}", 400)
     except PayloadException as e:
         return result_message(f"Error sending payload: {e.message}", e.status_code)
     except Exception as e:
