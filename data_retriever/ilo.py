@@ -44,8 +44,11 @@ class Ilo:
         Raises:
             requests.exceptions.RequestException: If connection couldn't be established
             PayloadException: If response from Ilo is not successful
+            RuntimeError: If get_server_status() hasn't been called before stop_server()
             Exception: If process fails for any reason
         """
+        if not self._reset_uri:
+            raise RuntimeError("get_server_status() must be called before stop_server()")
         payload = {"ResetType": "ForceOff"}
         self._send_payload(payload)
 
@@ -55,8 +58,11 @@ class Ilo:
         Raises:
             requests.exceptions.RequestException: If connection couldn't be established
             PayloadException: If response from Ilo is not successful
+            RuntimeError: If get_server_status() hasn't been called before start_server()
             Exception: If process fails for any reason
         """
+        if not self._reset_uri:
+            raise RuntimeError("get_server_status() must be called before start_server()")
         payload = {"ResetType": "On"}
         self._send_payload(payload)
 

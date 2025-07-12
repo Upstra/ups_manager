@@ -24,7 +24,7 @@ def server_stop(ip: str, user: str, password: str) -> str:
         elif power_status != "ON":
             return result_message(f"Power Status unsupported: {power_status}", 403)
 
-        ilo.start_server()
+        ilo.stop_server()
         return result_message("Server has been successfully stopped", 200)
 
     except RequestException as e:

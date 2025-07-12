@@ -15,7 +15,7 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-if [[ -z "$MOID" || -z "$IP" || -z "$USER" || -z "$PASSWORD" ]]; then
+if [[ -z "$VMMOID" || -z "$DISTMOID" || -z "$IP" || -z "$USER" || -z "$PASSWORD" ]]; then
     echo "ERROR : Missing parameter"
     echo "Usage: $0 --vm_moid <VMMOID> --dist_moid <DISTMOID> --ip <IP> --user <USER> --password <PASS> [--port <PORT>]"
     exit 1

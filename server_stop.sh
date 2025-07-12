@@ -27,5 +27,4 @@ if ! source .venv/bin/activate; then
     exit 1
 fi
 
-CMD="python server_stop.py --ip \"$IP\" --user \"$USER\" --password \"$PASSWORD\""
-eval "$CMD"
+python server_stop.py --ip "$IP" --user "$USER" --password "$PASSWORD"

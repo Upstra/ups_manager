@@ -30,7 +30,7 @@ def vm_migration(vm_moid: str, dist_moid: str,  ip: str, user: str, password: st
         target_host = conn.get_host_system(dist_moid)
         if not target_host:
             return result_message("Target server not found", 404)
-        if target_host.runtime.powerState == vim.VirtualMachinePowerState.poweredOff:
+        if target_host.runtime.powerState == vim.HostSystem.PowerState.poweredOff:
             return result_message("Target server is off", 403)
 
         if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:

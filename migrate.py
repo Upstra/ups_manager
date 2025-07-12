@@ -139,7 +139,7 @@ def turn_on_vms(v_center: VCenter, servers: Servers):
         conn.disconnect()
 
 
-def turn_off_vms(v_center: VCenter, servers: Servers):
+def shutdown(v_center: VCenter, servers: Servers):
     """
     Launch the shutdown plan of all servers specified in `servers
     Args:
@@ -156,7 +156,7 @@ def turn_off_vms(v_center: VCenter, servers: Servers):
             if not current_host:
                 print(f"Server '{server.host.name}' ({server.host.moid}) not found")
                 continue
-            if current_host.runtime.powerState == vim.VirtualMachinePowerState.poweredOff:
+            if current_host.runtime.powerState == vim.HostSystem.PowerState.poweredOff:
                 print(f"Server '{server.host.name}' ({server.host.moid}) is already off")
                 continue
 
@@ -164,6 +164,8 @@ def turn_off_vms(v_center: VCenter, servers: Servers):
             if server.destination:
                 dist_host = conn.get_host_system(server.destination.moid)
                 if dist_host:
+                    if dist_host.runtime.powerState == vim.HostSystem.PowerState.poweredOff:
+                        dist_ilo = Ilo(dist_host.ip, dist_host.user, dist_host.password)
                     is_shutdown_plan = False
                 else:
                     print(f"Distant server '{server.destination.name}' ({server.destination.moid}) not found. Launching shutdown plan...")
@@ -209,43 +211,6 @@ def turn_off_vms(v_center: VCenter, servers: Servers):
         conn.disconnect()
 
 
-def migrate_vms(v_center: VCenter, servers: Servers):
-    """
-    Launch the migration plan of all servers specified in `servers` to migrate each vm to a distant server
-    Args:
-        v_center (VCenter): The vCenter that orchestrates the migration plan
-        servers (Servers): The migration plan for each server
-    """
-    conn = VMwareConnection()
-    try:
-        conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
-        for server in servers.servers:
-            print(f"Migration du serveur {server.host.name} ({server.host.moid})")
-            vms = server.shutdown.vmOrder
-            stop_delay = server.shutdown.delay
-            for vm_moid in vms:
-                vm = conn.get_vm(vm_moid)
-                if not vm:
-                    print(f"{vm_moid} not found")
-                    continue
-                print(f"Powering Off {vm.name}...")
-                task = vm.PowerOff()
-                WaitForTask(task)
-                target_host = conn.get_host_system(server.destination.moid)
-                target_resource_pool = target_host.parent.resourcePool
-                task = vm.Migrate(
-                    pool=target_resource_pool,
-                    host=target_host,
-                    priority=vim.VirtualMachine.MovePriority.defaultPriority
-                )
-                WaitForTask(task)
-                sleep(stop_delay)
-    except Exception as err:
-        print(err)
-    finally:
-        conn.disconnect()
-
-
 if __name__ == "__main__":
     parser = ArgumentParser(description="Migration des vms")
     group = parser.add_mutually_exclusive_group(required=True)
@@ -259,7 +224,7 @@ if __name__ == "__main__":
 
     if args.shutdown:
         print("Lancement du plan de migration...")
-        turn_off_vms(v_center, servers)
+        shutdown(v_center, servers)
     elif args.restart:
         print("Lancement du plan de redémarrage...")
         turn_on_vms(v_center, servers)

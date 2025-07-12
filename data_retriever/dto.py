@@ -99,14 +99,15 @@ def server_info(host: vim.HostSystem) -> str:
     """
     json_object = {
         "name": host.name,
-        "ip": host.config.network.vnic[0].spec.ip.ipAddress,
         "vCenterIp": host.summary.managementServerIp,
-        "cluster": host.parent.name,
+        "cluster": host.parent.name if host.parent else "",
         "model": host.hardware.systemInfo.model,
         "vendor": host.hardware.systemInfo.vendor,
-        "biosVendor": host.hardware.biosInfo.vendor,
-        "firewall": host.hardware.firewall.ruleset,
+        "biosVendor": host.hardware.biosInfo.vendor
     }
+    if host.config:
+        json_object["ip"] = host.config.network.vnic[0].spec.ip.ipAddress if host.config.network.vnic else ""
+        json_object["firewall"] = host.config.firewall.defaultPolicy.incomingBlocked if host.config.firewall else None
     if host.capability:
         json_object["maxHostRunningVms"] = host.capability.maxHostRunningVms
         json_object["maxHostSupportedVcpus"] = host.capability.maxHostSupportedVcpus
