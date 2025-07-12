@@ -2,8 +2,8 @@ from argparse import ArgumentParser
 from pyVmomi import vim
 from pyVim.task import WaitForTask
 
-from dto import result_message
-from vm_ware_connection import VMwareConnection
+from data_retriever.dto import result_message
+from data_retriever.vm_ware_connection import VMwareConnection
 
 
 def vm_migration(vm_moid: str, dist_moid: str,  ip: str, user: str, password: str, port: int) -> str:

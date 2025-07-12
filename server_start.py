@@ -2,8 +2,8 @@ from argparse import ArgumentParser
 
 from requests.exceptions import RequestException
 
-from dto import result_message
-from ilo import Ilo, PayloadException
+from data_retriever.dto import result_message
+from data_retriever.ilo import Ilo, PayloadException
 
 
 def server_start(ip: str, user: str, password: str) -> str:

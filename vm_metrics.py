@@ -1,8 +1,8 @@
 from argparse import ArgumentParser
 from pyVmomi import vim
 
-from dto import vm_metrics_info, result_message
-from vm_ware_connection import VMwareConnection
+from data_retriever.dto import vm_metrics_info, result_message
+from data_retriever.vm_ware_connection import VMwareConnection
 
 
 def vm_metrics(moid: str, ip: str, user: str, password: str, port: int) -> str:

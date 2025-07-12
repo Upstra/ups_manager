@@ -6,8 +6,8 @@ from os.path import join as path_join
 from pyVim.task import WaitForTask
 from pyVmomi import vim
 
-from ilo import Ilo
-from vm_ware_connection import VMwareConnection
+from data_retriever.ilo import Ilo
+from data_retriever.vm_ware_connection import VMwareConnection
 
 
 @dataclass
