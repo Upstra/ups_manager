@@ -11,6 +11,7 @@ from data_retriever.ilo import Ilo
 from data_retriever.vm_ware_connection import VMwareConnection
 from server_start import server_start
 from server_stop import server_stop
+from vm_migration import vm_migration
 
 
 @dataclass
@@ -186,21 +187,15 @@ def shutdown(v_center: VCenter, servers: Servers):
 
             for vm_moid in vms:
                 vm = conn.get_vm(vm_moid)
-                if not vm:
-                    print(f"VM with moid '{vm_moid}' couldn't be found")
-                    continue
-                print(f"Powering Off {vm.name}...")
-                task = vm.PowerOff()
-                WaitForTask(task)
-
-                if not is_shutdown_plan:
-                    target_resource_pool = dist_host.parent.resourcePool
-                    task = vm.Migrate(
-                        pool=target_resource_pool,
-                        host=dist_host,
-                        priority=vim.VirtualMachine.MovePriority.defaultPriority
-                    )
+                if is_shutdown_plan:
+                    if not vm:
+                        print(f"VM with moid '{vm_moid}' couldn't be found")
+                        continue
+                    print(f"Powering Off {vm.name}...")
+                    task = vm.PowerOff()
                     WaitForTask(task)
+                else:
+                    vm_migration(vm, dist_host, server.destination.moid)
 
                 sleep(stop_delay)
 
