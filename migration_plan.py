@@ -70,14 +70,14 @@ def shutdown(v_center: VCenter, servers: Servers):
             for vm_moid in vms:
                 vm = conn.get_vm(vm_moid)
                 if dist_host:
-                    migration_result = vm_migration(vm, vm_moid, dist_host, server.destination.moid)
-                    print(migration_result['result']['message'])
+                    stop_result = vm_migration(vm, vm_moid, dist_host, server.destination.moid)
                     event = VMMigrationEvent(vm_moid, server.host.moid)
                 else:
                     stop_result = vm_stop(vm, vm_moid)
-                    print(stop_result['result']['message'])
                     event = VMShutdownEvent(vm_moid)
-                event_queue.push(event)
+                print(stop_result['result']['message'])
+                if stop_result['result']['httpCode'] == 200:
+                    event_queue.push(event)
                 sleep(stop_delay)
 
             stop_result = server_stop(server.host.ilo.ip, server.host.ilo.user, server.host.ilo.password)
