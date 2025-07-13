@@ -3,15 +3,15 @@ from time import sleep
 from argparse import ArgumentParser
 from dataclasses import dataclass
 from os.path import join as path_join
-from pyVim.task import WaitForTask
 from pyVmomi import vim
 from redis import Redis
+from json import dumps as json_dumps, loads as json_loads
 
-from data_retriever.ilo import Ilo
 from data_retriever.vm_ware_connection import VMwareConnection
 from server_start import server_start
 from server_stop import server_stop
 from vm_migration import vm_migration
+from vm_start import vm_start
 from vm_stop import vm_stop
 
 
@@ -114,34 +114,39 @@ def load_plan_from_yaml(file_path: str) -> tuple[VCenter, Servers]:
     return v_center, servers
 
 
-def turn_on_vms(v_center: VCenter, servers: Servers):
-    """
-    Launch the restart plan of all servers specified in `servers` to go back to the initial state
-    Args:
-        v_center (VCenter): The vCenter that orchestrates the migration plan
-        servers (Servers): The migration plan for each server
-    """
+def restart(start_delay: int):
+    """ Launch the restart plan of all servers specified in `servers` to go back to the initial state """
     conn = VMwareConnection()
     try:
         conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
-        for server in servers.servers:
-            print(f"Allumage du serveur {server.host.name} ({server.host.moid})")
-            vms = server.shutdown.vmOrder
-            vms.reverse()
-            start_delay = server.restart.delay
-            for vm_moid in vms:
-                vm = conn.get_vm(vm_moid)
-                if not vm:
-                    print(f"{vm_moid} not found")
-                    continue
-                print(f"Powering On {vm.name} ({vm_moid})...")
-                task = vm.PowerOn()
-                WaitForTask(task)
-                sleep(start_delay)
+        redis = Redis()
+        redis.set("migration:state", "restarting")
+        events = redis.lrange("migration:events", 0, -1)
+
+        for json_event in events:
+            event = json_loads(json_event)
+            if event['type'] == "VM":
+                vm = conn.get_vm(event['moid'])
+                if event['action'] == "MIGRATION":
+                    target_host = conn.get_host_system(event['host_moid'])
+                    start_result = vm_migration(vm, event['moid'], target_host, event['host_moid'])
+                else:
+                    start_result = vm_start(vm, event['moid'])
+            else:
+                start_result = server_start(event['ilo_ip'], event['ilo_user'], event['ilo_password'])
+            print(start_result['result']['message'])
+            sleep(start_delay)
+
+        redis.set("migration:state", "rolled_back")
+        print("Rollback complete")
+    except vim.fault.InvalidLogin as _:
+        return print("Invalid credentials")
     except Exception as err:
         print(err)
     finally:
         conn.disconnect()
+        redis.set("migration:state", "ok")
+        print("Rollback complete")
 
 
 def get_distant_host(conn: VMwareConnection, server: Server) -> vim.HostSystem:
@@ -171,6 +176,34 @@ def get_distant_host(conn: VMwareConnection, server: Server) -> vim.HostSystem:
     return dist_host
 
 
+def push_vm_migration(redis: Redis, vm_moid: str, server_moid: str):
+    event = json_dumps({
+        "type": "VM",
+        "moid": vm_moid,
+        "action": "MIGRATION",
+        "host_moid": server_moid
+    })
+    redis.lpush("migration:events", event)
+
+def push_vm_shutdown(redis: Redis, vm_moid: str):
+    event = json_dumps({
+        "type": "VM",
+        "moid": vm_moid,
+        "action": "SHUTDOWN",
+    })
+    redis.lpush("migration:events", event)
+
+def push_server(redis: Redis, server_moid: str, ilo_ip: str, ilo_user: str, ilo_password: str):
+    event = json_dumps({
+        "type": "SERVER",
+        "moid": server_moid,
+        "ilo_ip": ilo_ip,
+        "ilo_user": ilo_user,
+        "ilo_password": ilo_password
+    })
+    redis.lpush("migration:events", event)
+
+
 def shutdown(v_center: VCenter, servers: Servers):
     """
     Launch the shutdown plan of all servers specified in `servers
@@ -179,6 +212,7 @@ def shutdown(v_center: VCenter, servers: Servers):
         servers (Servers): The migration plan for each server
     """
     redis = Redis()
+    redis.set("migration:state", "shutting down")
     conn = VMwareConnection()
     try:
         conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
@@ -204,20 +238,27 @@ def shutdown(v_center: VCenter, servers: Servers):
                 if dist_host:
                     migration_result = vm_migration(vm, vm_moid, dist_host, server.destination.moid)
                     print(migration_result['result']['message'])
+                    push_migration(redis, vm_moid, server.host.ilo.ip, server.host.ilo.user, server.host.ilo.password)
                 else:
                     stop_result = vm_stop(vm, vm_moid)
                     print(stop_result['result']['message'])
+                    push_shutdown(redis, moid=vm_moid, is_vm=True)
                 sleep(stop_delay)
 
             stop_result = server_stop(server.host.ilo.ip, server.host.ilo.user, server.host.ilo.password)
-            if stop_result['result']['httpCode'] != 200:
+            if stop_result['result']['httpCode'] == 200:
                 print(f"Server '{server.host.name}' ({server.host.moid}) is fully migrated")
+                push_shutdown(redis, moid=server.host.moid, is_vm=False)
             else:
                 print(f"Couldn't stop server '{server.host.name}' ({server.host.moid})")
+    except vim.fault.InvalidLogin as _:
+        return print("Invalid credentials")
     except Exception as err:
         print(err)
     finally:
         conn.disconnect()
+        redis.set("migration:state", "shutted down")
+        print("Finished migration plan")
 
 
 if __name__ == "__main__":
@@ -236,6 +277,6 @@ if __name__ == "__main__":
         shutdown(v_center, servers)
     elif args.restart:
         print("Lancement du plan de redémarrage...")
-        turn_on_vms(v_center, servers)
+        restart()
     else:
         print("ERREUR: Utilisez --shutdown ou --restart")

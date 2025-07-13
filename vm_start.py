@@ -6,7 +6,30 @@ from data_retriever.dto import result_message, output
 from data_retriever.vm_ware_connection import VMwareConnection
 
 
-def vm_start(moid: str, ip: str, user: str, password: str, port: int) -> dict:
+def vm_start(vm: vim.VirtualMachine, name: str) -> dict:
+    """
+    Start a VM
+    Args:
+        vm (vim.VirtualMachine): The `VirtualMachine` object representing the VM to start
+        name (str): The name of the VM to start for logging
+    Returns:
+        dict: A dictionary formatted for json dump containing the result message. See result_message() function in dto.py
+    """
+    try:
+        if not vm:
+            return result_message("VM not found", 404)
+        if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
+            return result_message("VM is already on", 403)
+
+        task = vm.PowerOn()
+        WaitForTask(task)
+        return result_message("VM has been successfully started", 200)
+
+    except Exception as err:
+        return result_message(str(err), 400)
+
+
+def complete_vm_start(moid: str, ip: str, user: str, password: str, port: int) -> dict:
     """
     Start a VM
     Args:
@@ -22,14 +45,8 @@ def vm_start(moid: str, ip: str, user: str, password: str, port: int) -> dict:
     try:
         conn.connect(ip, user, password, port=port)
         vm = conn.get_vm(moid)
-        if not vm:
-            return result_message("VM not found", 404)
-        if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
-            return result_message("VM is already on", 403)
 
-        task = vm.PowerOn()
-        WaitForTask(task)
-        return result_message("VM has been successfully started", 200)
+        return vm_start(vm, moid)
 
     except vim.fault.InvalidLogin as _:
         return result_message("Invalid credentials", 401)
@@ -49,4 +66,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    output(vm_start(args.moid, args.ip, args.user, args.password, args.port))
+    output(complete_vm_start(args.moid, args.ip, args.user, args.password, args.port))
