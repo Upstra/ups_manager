@@ -31,21 +31,37 @@ class EventQueue:
         Returns:
             (list[VMMigrationEvent | VMShutdownEvent | ServerShutdownEvent]): The events pushed to the queue
         """
-        return [deserialize_event(event) for event in self._redis.lrange(EVENTS, 0, -1)]
+        try:
+            return [deserialize_event(event) for event in self._redis.lrange(EVENTS, 0, -1)]
+        except Exception as e:
+            print(f"Failed to get events to Redis: {e}")
+            return []
 
     def start_shutdown(self):
         """ Notify redis listener of the start of the migration """
-        self._redis.set(STATE, "in migration")
+        try:
+            self._redis.set(STATE, "in migration")
+        except Exception as e:
+            print(f"Failed to push status to Redis: {e}")
 
     def finish_shutdown(self):
         """ Notify redis listener of the end of the migration """
-        self._redis.set(STATE, "migrated")
+        try:
+            self._redis.set(STATE, "migrated")
+        except Exception as e:
+            print(f"Failed to push status to Redis: {e}")
 
     def start_restart(self):
         """ Notify redis listener of the start of the rollback """
-        self._redis.set(STATE, "restarting")
+        try:
+            self._redis.set(STATE, "restarting")
+        except Exception as e:
+            print(f"Failed to push status to Redis: {e}")
 
     def finish_restart(self):
         """ Notify redis listener that everything is back to normal """
-        self._redis.delete(STATE)
-        self._redis.delete(EVENTS)
+        try:
+            self._redis.delete(STATE)
+            self._redis.delete(EVENTS)
+        except Exception as e:
+            print(f"Failed to delete status and events in Redis: {e}")
