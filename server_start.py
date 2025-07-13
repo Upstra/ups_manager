@@ -1,11 +1,11 @@
 from argparse import ArgumentParser
 from requests.exceptions import RequestException, HTTPError
 
-from data_retriever.dto import result_message
+from data_retriever.dto import result_message, output
 from data_retriever.ilo import Ilo, PayloadException
 
 
-def server_start(ip: str, user: str, password: str) -> str:
+def server_start(ip: str, user: str, password: str) -> dict:
     """
     Start a server
     Args:
@@ -13,13 +13,13 @@ def server_start(ip: str, user: str, password: str) -> str:
         user (str): The username of the Ilo of the server
         password (str): The password of the Ilo of the server
     Returns:
-        str: A string formatted json dump of the result message. See result_message() function in dto.py
+        dict: A dictionary formatted for json dump containing the result message. See result_message() function in dto.py
     """
     ilo = Ilo(ip, user, password)
     try:
         power_status = ilo.get_server_status()
         if power_status == "ON":
-            return result_message("Server is already ON", 403)
+            return result_message("Server is already on", 403)
         elif power_status != "OFF":
             return result_message(f"Power Status unsupported: {power_status}", 403)
 
@@ -45,4 +45,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print(server_start(args.ip, args.user, args.password))
+    output(server_start(args.ip, args.user, args.password))
