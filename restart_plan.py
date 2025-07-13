@@ -60,4 +60,5 @@ def restart(v_center: VCenter):
 
 if __name__ == "__main__":
     v_center, _ = load_plan_from_yaml("plans/migration.yml")
-    restart(v_center)
+    if v_center:
+        restart(v_center)

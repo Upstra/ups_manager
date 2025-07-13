@@ -101,4 +101,5 @@ def shutdown(v_center: VCenter, servers: Servers):
 
 if __name__ == "__main__":
     v_center, servers = load_plan_from_yaml("plans/migration.yml")
-    shutdown(v_center, servers)
+    if v_center and servers:
+        shutdown(v_center, servers)
