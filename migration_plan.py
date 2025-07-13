@@ -45,10 +45,10 @@ def shutdown(v_center: VCenter, servers: Servers):
         v_center (VCenter): The vCenter that orchestrates the migration plan
         servers (Servers): The migration plan for each server
     """
-    event_queue = EventQueue()
-    event_queue.start_shutdown()
     conn = VMwareConnection()
     try:
+        event_queue = EventQueue()
+        event_queue.start_shutdown()
         conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
         for server in servers.servers:
             vms = server.shutdown.vmOrder
@@ -87,6 +87,8 @@ def shutdown(v_center: VCenter, servers: Servers):
                 event_queue.push(event)
             else:
                 print(f"Couldn't stop server '{server.host.name}' ({server.host.moid})")
+    except ConnectionError as err:
+        print(err)
     except vim.fault.InvalidLogin as _:
         print("Invalid credentials")
     except Exception as err:

@@ -17,8 +17,8 @@ def restart(v_center: VCenter):
         v_center (VCenter): The VCenter informations to connect to
     """
     conn = VMwareConnection()
-    event_queue = EventQueue()
     try:
+        event_queue = EventQueue()
         conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
         event_queue.start_restart()
         events = event_queue.get_event_list()
@@ -43,6 +43,8 @@ def restart(v_center: VCenter):
             print(start_result['result']['message'])
             sleep(start_delay)
 
+    except ConnectionError as err:
+        print(err)
     except vim.fault.InvalidLogin as _:
         print("Invalid credentials")
     except Exception as err:

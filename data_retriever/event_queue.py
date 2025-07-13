@@ -12,7 +12,7 @@ class EventQueue:
             self._redis = Redis()
             self._redis.ping()
         except Exception as e:
-            raise ConnectionError(f"Failed to connect to Redis: {e}")
+            raise ConnectionError(f"Failed to connect to Redis: {e}") from e
 
     def push(self, event):
         """
