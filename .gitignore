@@ -5,6 +5,6 @@
 
 __pycache__/
 
-plans/*.yml
+plans/migration.yml
 
 logs/*.log
