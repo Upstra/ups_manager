@@ -1,8 +1,8 @@
 from time import sleep
 from pyVmomi import vim
-from redis import Redis
 
-from data_retriever.migration_event import VMMigrationEvent, serialize_event, VMShutdownEvent, ServerShutdownEvent
+from data_retriever.event_queue import EventQueue
+from data_retriever.migration_event import VMMigrationEvent, VMShutdownEvent, ServerShutdownEvent
 from data_retriever.vm_ware_connection import VMwareConnection
 from data_retriever.yaml_parser import Server, VCenter, Servers, load_plan_from_yaml
 from server_start import server_start
@@ -45,8 +45,8 @@ def shutdown(v_center: VCenter, servers: Servers):
         v_center (VCenter): The vCenter that orchestrates the migration plan
         servers (Servers): The migration plan for each server
     """
-    redis = Redis()
-    redis.set("migration:state", "shutting down")
+    event_queue = EventQueue()
+    event_queue.start_shutdown()
     conn = VMwareConnection()
     try:
         conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
@@ -77,14 +77,14 @@ def shutdown(v_center: VCenter, servers: Servers):
                     stop_result = vm_stop(vm, vm_moid)
                     print(stop_result['result']['message'])
                     event = VMShutdownEvent(vm_moid)
-                redis.lpush("migration:events", serialize_event(event))
+                event_queue.push(event)
                 sleep(stop_delay)
 
             stop_result = server_stop(server.host.ilo.ip, server.host.ilo.user, server.host.ilo.password)
             if stop_result['result']['httpCode'] == 200:
                 print(f"Server '{server.host.name}' ({server.host.moid}) is fully migrated")
                 event = ServerShutdownEvent(server.host.moid, server.host.ilo.ip, server.host.ilo.user, server.host.ilo.password, server.restart.delay)
-                redis.lpush("migration:events", serialize_event(event))
+                event_queue.push(event)
             else:
                 print(f"Couldn't stop server '{server.host.name}' ({server.host.moid})")
     except vim.fault.InvalidLogin as _:
@@ -93,7 +93,7 @@ def shutdown(v_center: VCenter, servers: Servers):
         print(err)
     finally:
         conn.disconnect()
-        redis.set("migration:state", "shutted down")
+        event_queue.finish_shutdown()
         print("Finished migration plan")
 
 

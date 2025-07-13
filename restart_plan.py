@@ -1,8 +1,8 @@
 from time import sleep
 from pyVmomi import vim
-from redis import Redis
 
-from data_retriever.migration_event import deserialize_event, VMMigrationEvent, VMShutdownEvent, ServerShutdownEvent
+from data_retriever.event_queue import EventQueue
+from data_retriever.migration_event import VMMigrationEvent, VMShutdownEvent, ServerShutdownEvent
 from data_retriever.vm_ware_connection import VMwareConnection
 from data_retriever.yaml_parser import VCenter, load_plan_from_yaml
 from server_start import server_start
@@ -17,15 +17,14 @@ def restart(v_center: VCenter):
         v_center (VCenter): The VCenter informations to connect to
     """
     conn = VMwareConnection()
-    redis = Redis()
+    event_queue = EventQueue()
     try:
         conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
-        redis.set("migration:state", "restarting")
-        events = redis.lrange("migration:events", 0, -1)
+        event_queue.start_restart()
+        events = event_queue.get_event_list()
         start_delay = 60
 
-        for json_event in events:
-            event = deserialize_event(json_event)
+        for event in events:
             if isinstance(event, VMMigrationEvent):
                 vm = conn.get_vm(event.vm_moid)
                 target_host = conn.get_host_system(event.server_moid)
@@ -42,7 +41,7 @@ def restart(v_center: VCenter):
             print(start_result['result']['message'])
             sleep(start_delay)
 
-        redis.set("migration:state", "rolled_back")
+        event_queue.finish_restart()
         print("Rollback complete")
     except vim.fault.InvalidLogin as _:
         return print("Invalid credentials")
@@ -50,7 +49,7 @@ def restart(v_center: VCenter):
         print(err)
     finally:
         conn.disconnect()
-        redis.set("migration:state", "ok")
+        event_queue.finish_restart()
         print("Rollback complete")
 
 
