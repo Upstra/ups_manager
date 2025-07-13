@@ -2,7 +2,7 @@
 
 # Usage: ./restart_plan.sh
 
-PID=$(ps -ef | grep migration_plan.py | grep -v grep | awk '{print $2}')
+PID=$(pgrep -f "python.*migration_plan\.py$")
 if [ -n "$PID" ]; then
     echo "Killing migration_plan.py (PID $PID)…"
     kill "$PID"
@@ -12,9 +12,13 @@ if [ ! -f .venv/bin/activate ]; then
     echo "ERROR: Virtual environment not found at .venv/bin/activate"
     exit 1
 fi
-if ! source .venv/bin/activate; then
+source .venv/bin/activate
+if [ -z "$VIRTUAL_ENV" ]; then
     echo "ERROR: Failed to activate virtual environment"
     exit 1
 fi
 
-python restart_plan.py
+if ! python restart_plan.py; then
+  echo "ERROR: Failed to start restart_plan.py"
+  exit 1
+fi

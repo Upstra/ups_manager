@@ -8,7 +8,11 @@ EVENTS = "migration:events"
 
 class EventQueue:
     def __init__(self):
-        self._redis = Redis()
+        try:
+            self._redis = Redis()
+            self._redis.ping()
+        except Exception as e:
+            raise ConnectionError(f"Failed to connect to Redis: {e}")
 
     def push(self, event):
         """
@@ -16,7 +20,10 @@ class EventQueue:
         Args:
             event (VMMigrationEvent | VMShutdownEvent | ServerShutdownEvent): The event to push to the queue
         """
-        self._redis.lpush(EVENTS, serialize_event(event))
+        try:
+            self._redis.lpush(EVENTS, serialize_event(event))
+        except Exception as e:
+            print(f"Failed to push event to Redis: {e}")
 
     def get_event_list(self):
         """

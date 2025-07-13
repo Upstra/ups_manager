@@ -30,7 +30,7 @@ def get_distant_host(conn: VMwareConnection, server: Server) -> vim.HostSystem:
         return None
 
     if dist_host.runtime.powerState == vim.HostSystem.PowerState.poweredOff:
-        start_result = server_start(dist_host.ip, dist_host.user, dist_host.password)
+        start_result = server_start(server.destination.ilo.ip, server.destination.ilo.user, server.destination.ilo.password)
         if start_result['result']['httpCode'] != 200:
             print(f"Distant server '{server.destination.name}' ({server.destination.moid}) is off and won't turn on : {start_result['result']['message']}")
             return None
@@ -88,7 +88,7 @@ def shutdown(v_center: VCenter, servers: Servers):
             else:
                 print(f"Couldn't stop server '{server.host.name}' ({server.host.moid})")
     except vim.fault.InvalidLogin as _:
-        return print("Invalid credentials")
+        print("Invalid credentials")
     except Exception as err:
         print(err)
     finally:

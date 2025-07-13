@@ -45,7 +45,20 @@ def deserialize_event(event_json: str):
         event_json: (str): Json formatted string representation of an Event
     Returns:
         VMMigrationEvent | VMShutdownEvent | ServerShutdownEvent: The deserialized event
+    Raises:
+        ValueError: If JSON is malformed or event type is unknown
     """
-    obj = json_loads(event_json)
-    cls = EVENT_CLASSES[obj["event_type"]]
-    return cls(**obj["data"])
+    try:
+        obj = json_loads(event_json)
+    except Exception as e:
+        raise ValueError(f"Invalid JSON format: {e}") from e
+
+    event_type = obj.get("event_type")
+    if event_type not in EVENT_CLASSES:
+        raise ValueError(f"Unknown event type: {event_type}")
+
+    cls = EVENT_CLASSES[event_type]
+    try:
+        return cls(**obj["data"])
+    except TypeError as e:
+        raise ValueError(f"Invalid event data for {event_type}: {e}") from e

@@ -28,6 +28,8 @@ def restart(v_center: VCenter):
             if isinstance(event, VMMigrationEvent):
                 vm = conn.get_vm(event.vm_moid)
                 target_host = conn.get_host_system(event.server_moid)
+                while target_host.runtime.connectionState != 'connected':
+                    sleep(start_delay)
                 start_result = vm_migration(vm, event.vm_moid, target_host, event.server_moid)
             elif isinstance(event, VMShutdownEvent):
                 vm = conn.get_vm(event.vm_moid)
@@ -41,10 +43,8 @@ def restart(v_center: VCenter):
             print(start_result['result']['message'])
             sleep(start_delay)
 
-        event_queue.finish_restart()
-        print("Rollback complete")
     except vim.fault.InvalidLogin as _:
-        return print("Invalid credentials")
+        print("Invalid credentials")
     except Exception as err:
         print(err)
     finally:

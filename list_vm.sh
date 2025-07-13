@@ -23,7 +23,8 @@ if [ ! -f .venv/bin/activate ]; then
     echo "ERROR: Virtual environment not found at .venv/bin/activate"
     exit 1
 fi
-if ! source .venv/bin/activate; then
+source .venv/bin/activate
+if [ -z "$VIRTUAL_ENV" ]; then
     echo "ERROR: Failed to activate virtual environment"
     exit 1
 fi

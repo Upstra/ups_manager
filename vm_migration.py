@@ -65,7 +65,7 @@ def complete_vm_migration(vm_moid: str, dist_moid: str,  ip: str, user: str, pas
         vm = conn.get_vm(vm_moid)
         target_host = conn.get_host_system(dist_moid)
 
-        return vm_migration(vm, target_host, dist_moid)
+        return vm_migration(vm, vm_moid, target_host, dist_moid)
 
     except vim.fault.InvalidLogin as _:
         return result_message("Invalid credentials", 401)
