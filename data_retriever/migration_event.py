@@ -10,6 +10,7 @@ class VMMigrationEvent:
 @dataclass
 class VMShutdownEvent:
     vm_moid: str
+    server_moid: str
 
 @dataclass
 class ServerShutdownEvent:

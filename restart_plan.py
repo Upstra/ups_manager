@@ -33,6 +33,9 @@ def restart(v_center: VCenter):
                 start_result = vm_migration(vm, event.vm_moid, target_host, event.server_moid)
             elif isinstance(event, VMShutdownEvent):
                 vm = conn.get_vm(event.vm_moid)
+                target_host = conn.get_host_system(event.server_moid)
+                while target_host.runtime.connectionState != 'connected':
+                    sleep(start_delay)
                 start_result = vm_start(vm, event.vm_moid)
             elif isinstance(event, ServerShutdownEvent):
                 start_result = server_start(event.ilo_ip, event.ilo_user, event.ilo_password)
@@ -42,6 +45,8 @@ def restart(v_center: VCenter):
                 continue
             print(start_result['result']['message'])
             sleep(start_delay)
+        event_queue.finish_restart()
+        print("Rollback complete")
 
     except ConnectionError as err:
         print(err)
@@ -51,8 +56,6 @@ def restart(v_center: VCenter):
         print(err)
     finally:
         conn.disconnect()
-        event_queue.finish_restart()
-        print("Rollback complete")
 
 
 if __name__ == "__main__":

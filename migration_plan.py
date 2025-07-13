@@ -74,7 +74,7 @@ def shutdown(v_center: VCenter, servers: Servers):
                     event = VMMigrationEvent(vm_moid, server.host.moid)
                 else:
                     stop_result = vm_stop(vm, vm_moid)
-                    event = VMShutdownEvent(vm_moid)
+                    event = VMShutdownEvent(vm_moid, server.host.moid)
                 print(stop_result['result']['message'])
                 if stop_result['result']['httpCode'] == 200:
                     event_queue.push(event)
