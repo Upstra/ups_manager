@@ -23,7 +23,7 @@ def vm_start(vm: vim.VirtualMachine, name: str) -> dict:
 
         task = vm.PowerOn()
         WaitForTask(task)
-        return result_message("VM has been successfully started", 200)
+        return result_message(f"VM '{name}' has been successfully started", 200)
 
     except Exception as err:
         return result_message(str(err), 400)
