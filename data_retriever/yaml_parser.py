@@ -58,9 +58,9 @@ def load_plan_from_yaml(file_path: str) -> tuple[VCenter, Servers]:
         with open(file_path, 'r') as f:
             data = yaml_load(f)
     except FileNotFoundError:
-        raise FileNotFoundError(f"Migration plan file not found: {file_path}") from None
+        print(f"Migration plan file not found: {file_path}")
     except Exception as e:
-        raise ValueError(f"Error parsing YAML file: {e}") from e
+        print(f"Error parsing YAML file: {e}")
 
     v_center = VCenter(
         ip=data['vCenter']['ip'],
