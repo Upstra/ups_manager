@@ -27,14 +27,14 @@ class EventQueue:
 
     def get_event_list(self):
         """
-        Pop all events pushed to the queue
+        Get all events from the queue
         Returns:
-            (list[VMMigrationEvent | VMShutdownEvent | ServerShutdownEvent]): The events pushed to the queue
+            (list[VMMigrationEvent | VMShutdownEvent | ServerShutdownEvent]): All events pushed to the queue
         """
         try:
             return [deserialize_event(event) for event in self._redis.lrange(EVENTS, 0, -1)]
         except Exception as e:
-            print(f"Failed to get events to Redis: {e}")
+            print(f"Failed to get events from Redis: {e}")
             return []
 
     def start_shutdown(self):
