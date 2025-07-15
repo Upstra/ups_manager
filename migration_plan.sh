@@ -4,13 +4,18 @@
 
 PID=$(pgrep -f "python.*migration_plan\.py$")
 if [ -n "$PID" ]; then
-    echo "migration_plan.py is already running"
+    echo "ERROR: migration_plan.py is already running"
     exit 1
 fi
 
 PID=$(pgrep -f "python.*restart_plan\.py$")
 if [ -n "$PID" ]; then
     echo "Killing restart_plan.py (PID $PID)..."
+    kill "$PID"
+fi
+PID=$(pgrep -f "python.*restart_plan\.sh$")
+if [ -n "$PID" ]; then
+    echo "Killing restart_plan.sh (PID $PID)..."
     kill "$PID"
 fi
 

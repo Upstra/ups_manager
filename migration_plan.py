@@ -84,6 +84,7 @@ def shutdown(v_center: VCenter, ups_grace: UpsGrace, servers: Servers):
                 if stop_result['result']['httpCode'] == 200:
                     event_queue.push(event)
 
+            print(f"Stopping server '{server.host.name}' ({server.host.moid})...")
             stop_result = server_stop(server.host.ilo.ip, server.host.ilo.user, server.host.ilo.password)
             if stop_result['result']['httpCode'] == 200:
                 print(f"Server '{server.host.name}' ({server.host.moid}) is fully migrated")
