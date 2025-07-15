@@ -13,7 +13,7 @@ if [ -n "$PID" ]; then
     echo "Killing restart_plan.py (PID $PID)..."
     kill "$PID"
 fi
-PID=$(pgrep -f "python.*restart_plan\.sh$")
+PID=$(pgrep -f ".*restart_plan\.sh$")
 if [ -n "$PID" ]; then
     echo "Killing restart_plan.sh (PID $PID)..."
     kill "$PID"
