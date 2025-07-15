@@ -18,7 +18,6 @@ class ServerShutdownEvent:
     ilo_ip: str
     ilo_user: str
     ilo_password: str
-    start_delay: int
 
 EVENT_CLASSES = {
     "VMMigrationEvent": VMMigrationEvent,
