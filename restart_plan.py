@@ -30,12 +30,14 @@ def restart(v_center: VCenter, ups_grace: UpsGrace):
                 vm = conn.get_vm(event.vm_moid)
                 target_host = conn.get_host_system(event.server_moid)
                 while target_host.runtime.connectionState != 'connected':
+                    print(f"Waiting {start_delay} seconds for server to completely turn on...")
                     sleep(start_delay)
                 start_result = vm_migration(vm, event.vm_moid, target_host, event.server_moid)
             elif isinstance(event, VMShutdownEvent):
                 vm = conn.get_vm(event.vm_moid)
                 target_host = conn.get_host_system(event.server_moid)
                 while target_host.runtime.connectionState != 'connected':
+                    print(f"Waiting {start_delay} seconds for server to completely turn on...")
                     sleep(start_delay)
                 start_result = vm_start(vm, event.vm_moid)
             elif isinstance(event, ServerShutdownEvent):
