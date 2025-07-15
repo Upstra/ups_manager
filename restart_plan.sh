@@ -7,11 +7,6 @@ if [ -n "$PID" ]; then
     echo "ERROR: restart_plan.py is already running"
     exit 1
 fi
-PID=$(pgrep -f ".*restart_plan\.sh$")
-if [ -n "$PID" ]; then
-    echo "ERROR: restart_plan.sh is already running"
-    exit 1
-fi
 
 CONFIG_FILE="plans/migration.yml"
 if [ ! -f "$CONFIG_FILE" ]; then
