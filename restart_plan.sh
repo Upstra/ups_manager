@@ -14,7 +14,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
     exit 1
 fi
 
-RESTART_GRACE=$(grep -A1 '^ups:' "$CONFIG_FILE" | grep 'restartGrace:' | awk '{print $2}')
+RESTART_GRACE=$(grep 'restartGrace:' "$CONFIG_FILE" | awk '{print $2}')
 if [ -z "$RESTART_GRACE" ]; then
     echo "ERROR: Could not find ups.restartGrace value in $CONFIG_FILE"
     exit 1
