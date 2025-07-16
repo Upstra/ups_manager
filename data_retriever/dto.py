@@ -122,6 +122,7 @@ def server_info(host: vim.HostSystem) -> dict:
     """
     return {
         "name": host.name,
+        "moid": host._moId,
         "vCenterIp": host.summary.managementServerIp,
         "cluster": host.parent.name if host.parent else "",
         "vendor": host.hardware.systemInfo.vendor,
