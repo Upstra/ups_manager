@@ -24,7 +24,7 @@ def vm_start(vm: vim.VirtualMachine, name: str) -> dict:
         task = vm.PowerOn()
         WaitForTask(task)
         return result_message(f"VM '{name}' has been successfully started", 200)
-    except vim.fault.NoCompatibleHost as _:
+    except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState, vim.fault.HostNotConnected) as _:
         return result_message("Host is unreachable", 404)
     except Exception as err:
         return result_message(str(err), 400)
