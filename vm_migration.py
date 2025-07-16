@@ -63,10 +63,7 @@ def complete_vm_migration(vm_moid: str, dist_moid: str,  ip: str, user: str, pas
         vm = conn.get_vm(vm_moid)
         target_host = conn.get_host_system(dist_moid)
 
-        result = vm_stop(vm, vm_moid)
-        if result['result']['httpCode'] != 200:
-            return result
-
+        vm_stop(vm, vm_moid)
         result = vm_migration(vm, vm_moid, target_host, dist_moid)
         if result['result']['httpCode'] != 200:
             return result
