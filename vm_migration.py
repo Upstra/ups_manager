@@ -48,14 +48,14 @@ def vm_migration(vm: vim.VirtualMachine, vm_name: str, target_host: vim.HostSyst
 
 def complete_vm_migration(vm_moid: str, dist_moid: str,  ip: str, user: str, password: str, port: int) -> dict:
     """
-    Migrate a VM to a different host by creating a connection to the VCenter or the ESXI server
+    Migrate a VM to a different host by creating a connection to the VCenter
     Args:
         vm_moid (str): The Managed Object ID of the VM to migrate
         dist_moid (str): The Managed Object ID of the server where to migrate the VM
-        ip (str): The ip of the VCenter or the ESXI server to connect to
-        user (str): The username of the VCenter or the ESXI server to connect to
-        password (str): The password of the VCenter or the ESXI server to connect to
-        port (int): The port to use to connect to the VCenter or the ESXI server
+        ip (str): The ip of the VCenter to connect to
+        user (str): The username of the VCenter to connect to
+        password (str): The password of the VCenter to connect to
+        port (int): The port to use to connect to the VCenter
     Returns:
         dict: A dictionary formatted for json dump containing the result message. See result_message() function in dto.py
     """
@@ -87,10 +87,10 @@ if __name__ == "__main__":
     parser = ArgumentParser(description="Migrer une VM")
     parser.add_argument("--vm_moid", required=True, help="Le Managed Object ID de la VM")
     parser.add_argument("--dist_moid", required=True, help="Le Managed Object ID du serveur ESXi destination")
-    parser.add_argument("--ip", required=True, help="Adresse IP du serveur")
-    parser.add_argument("--user", required=True, help="Nom d'utilisateur")
-    parser.add_argument("--password", required=True, help="Mot de passe")
-    parser.add_argument("--port", type=int, default=443, help="Port du serveur")
+    parser.add_argument("--ip", required=True, help="Adresse IP du vCenter")
+    parser.add_argument("--user", required=True, help="Nom d'utilisateur du vCenter")
+    parser.add_argument("--password", required=True, help="Mot de passe de l'utilisateur du vCenter")
+    parser.add_argument("--port", type=int, default=443, help="Port du vCenter (optionnel, 443 par défaut)")
 
     args = parser.parse_args()
 

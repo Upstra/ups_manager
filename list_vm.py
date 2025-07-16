@@ -9,10 +9,10 @@ def list_vm(ip: str, user: str, password: str, port: int) -> dict:
     """
     List all VMs on a server
     Args:
-        ip (str): The ip of the VCenter or the ESXI server to connect to
-        user (str): The username of the VCenter or the ESXI server to connect to
-        password (str): The password of the VCenter or the ESXI server to connect to
-        port (int): The port to use to connect to the VCenter or the ESXI server
+        ip (str): The ip of the VCenter to connect to
+        user (str): The username of the VCenter to connect to
+        password (str): The password of the VCenter to connect to
+        port (int): The port to use to connect to the VCenter
     Returns:
         dict: A dictionary formatted for json dump containing the VMs data (vms_list_info()), or an error message (result_message())
     """
@@ -32,10 +32,10 @@ def list_vm(ip: str, user: str, password: str, port: int) -> dict:
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Lister les VM d'un serveur")
-    parser.add_argument("--ip", required=True, help="Adresse IP du serveur")
-    parser.add_argument("--user", required=True, help="Nom d'utilisateur")
-    parser.add_argument("--password", required=True, help="Mot de passe")
-    parser.add_argument("--port", type=int, default=443, help="Port du serveur")
+    parser.add_argument("--ip", required=True, help="Adresse IP du vCenter")
+    parser.add_argument("--user", required=True, help="Nom d'utilisateur du vCenter")
+    parser.add_argument("--password", required=True, help="Mot de passe de l'utilisateur du vCenter")
+    parser.add_argument("--port", type=int, default=443, help="Port du vCenter (optionnel, 443 par défaut)")
 
     args = parser.parse_args()
 
