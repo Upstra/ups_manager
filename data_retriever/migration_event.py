@@ -13,6 +13,11 @@ class VMShutdownEvent:
     server_moid: str
 
 @dataclass
+class VMStartedEvent:
+    vm_moid: str
+    server_moid: str
+
+@dataclass
 class ServerShutdownEvent:
     server_moid: str
     ilo_ip: str
@@ -20,6 +25,7 @@ class ServerShutdownEvent:
     ilo_password: str
 
 EVENT_CLASSES = {
+    "VMStartedEvent": VMStartedEvent,
     "VMMigrationEvent": VMMigrationEvent,
     "VMShutdownEvent": VMShutdownEvent,
     "ServerShutdownEvent": ServerShutdownEvent,

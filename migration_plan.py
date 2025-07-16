@@ -2,12 +2,13 @@ from time import sleep
 from pyVmomi import vim
 
 from data_retriever.event_queue import EventQueue
-from data_retriever.migration_event import VMMigrationEvent, VMShutdownEvent, ServerShutdownEvent
+from data_retriever.migration_event import VMMigrationEvent, VMShutdownEvent, ServerShutdownEvent, VMStartedEvent
 from data_retriever.vm_ware_connection import VMwareConnection
 from data_retriever.yaml_parser import Server, VCenter, Servers, load_plan_from_yaml, UpsGrace
 from server_start import server_start
 from server_stop import server_stop
 from vm_migration import vm_migration
+from vm_start import vm_start
 from vm_stop import vm_stop
 
 
@@ -74,15 +75,24 @@ def shutdown(v_center: VCenter, ups_grace: UpsGrace, servers: Servers):
 
             for vm_moid in vms:
                 vm = conn.get_vm(vm_moid)
-                if dist_host:
-                    stop_result = vm_migration(vm, vm_moid, dist_host, server.destination.moid)
-                    event = VMMigrationEvent(vm_moid, server.host.moid)
-                else:
-                    stop_result = vm_stop(vm, vm_moid)
-                    event = VMShutdownEvent(vm_moid, server.host.moid)
+                stop_result = vm_stop(vm, vm_moid)
                 print(stop_result['result']['message'])
                 if stop_result['result']['httpCode'] == 200:
+                    event = VMShutdownEvent(vm_moid, server.host.moid)
                     event_queue.push(event)
+                if not dist_host:
+                    continue
+
+                stop_result = vm_migration(vm, vm_moid, dist_host, server.destination.moid)
+                print(stop_result['result']['message'])
+                if stop_result['result']['httpCode'] != 200:
+                    event = VMMigrationEvent(vm_moid, server.host.moid)
+                    event_queue.push(event)
+                    stop_result = vm_start(vm, vm_moid)
+                    print(stop_result['result']['message'])
+                    if stop_result['result']['httpCode'] == 200:
+                        event = VMStartedEvent(vm_moid, server.host.moid)
+                        event_queue.push(event)
 
             print(f"Stopping server '{server.host.name}' ({server.host.moid})...")
             stop_result = server_stop(server.host.ilo.ip, server.host.ilo.user, server.host.ilo.password)

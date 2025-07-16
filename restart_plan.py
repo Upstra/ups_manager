@@ -2,12 +2,13 @@ from time import sleep
 from pyVmomi import vim
 
 from data_retriever.event_queue import EventQueue
-from data_retriever.migration_event import VMMigrationEvent, VMShutdownEvent, ServerShutdownEvent
+from data_retriever.migration_event import VMMigrationEvent, VMShutdownEvent, ServerShutdownEvent, VMStartedEvent
 from data_retriever.vm_ware_connection import VMwareConnection
 from data_retriever.yaml_parser import VCenter, load_plan_from_yaml, UpsGrace
 from server_start import server_start
 from vm_migration import vm_migration
 from vm_start import vm_start
+from vm_stop import vm_stop
 
 
 def restart(v_center: VCenter, ups_grace: UpsGrace):
@@ -26,20 +27,27 @@ def restart(v_center: VCenter, ups_grace: UpsGrace):
         events = event_queue.get_event_list()
 
         for event in events:
-            if isinstance(event, VMMigrationEvent):
-                vm = conn.get_vm(event.vm_moid)
-                target_host = conn.get_host_system(event.server_moid)
-                while target_host.runtime.connectionState != 'connected':
-                    print(f"Waiting {start_delay} seconds for server to completely turn on...")
-                    sleep(start_delay)
-                start_result = vm_migration(vm, event.vm_moid, target_host, event.server_moid)
-            elif isinstance(event, VMShutdownEvent):
+            if isinstance(event, VMShutdownEvent):
                 vm = conn.get_vm(event.vm_moid)
                 target_host = conn.get_host_system(event.server_moid)
                 while target_host.runtime.connectionState != 'connected':
                     print(f"Waiting {start_delay} seconds for server to completely turn on...")
                     sleep(start_delay)
                 start_result = vm_start(vm, event.vm_moid)
+            elif isinstance(event, VMMigrationEvent):
+                vm = conn.get_vm(event.vm_moid)
+                target_host = conn.get_host_system(event.server_moid)
+                while target_host.runtime.connectionState != 'connected':
+                    print(f"Waiting {start_delay} seconds for server to completely turn on...")
+                    sleep(start_delay)
+                start_result = vm_migration(vm, event.vm_moid, target_host, event.server_moid)
+            elif isinstance(event, VMStartedEvent):
+                vm = conn.get_vm(event.vm_moid)
+                target_host = conn.get_host_system(event.server_moid)
+                while target_host.runtime.connectionState != 'connected':
+                    print(f"Waiting {start_delay} seconds for server to completely turn on...")
+                    sleep(start_delay)
+                start_result = vm_stop(vm, event.vm_moid)
             elif isinstance(event, ServerShutdownEvent):
                 start_result = server_start(event.ilo_ip, event.ilo_user, event.ilo_password)
             else:

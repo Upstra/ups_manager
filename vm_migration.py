@@ -4,6 +4,8 @@ from pyVim.task import WaitForTask
 
 from data_retriever.dto import result_message, output
 from data_retriever.vm_ware_connection import VMwareConnection
+from vm_start import vm_start
+from vm_stop import vm_stop
 
 
 def vm_migration(vm: vim.VirtualMachine, vm_name: str, target_host: vim.HostSystem, target_moid: str) -> dict:
@@ -26,10 +28,8 @@ def vm_migration(vm: vim.VirtualMachine, vm_name: str, target_host: vim.HostSyst
             return result_message(f"Target server '{target_moid}' not found", 404)
         if target_host.runtime.powerState == vim.HostSystem.PowerState.poweredOff:
             return result_message(f"Target server '{target_moid}' is off. Turn it on before launching a migration", 403)
-
         if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
-            task = vm.PowerOff()
-            WaitForTask(task)
+            return result_message(f"VM '{vm_name}' is started and can't migrate in that state", 403)
 
         target_resource_pool = target_host.parent.resourcePool
         task = vm.Migrate(
@@ -37,8 +37,6 @@ def vm_migration(vm: vim.VirtualMachine, vm_name: str, target_host: vim.HostSyst
             host=target_host,
             priority=vim.VirtualMachine.MovePriority.defaultPriority
         )
-        WaitForTask(task)
-        task = vm.PowerOn()
         WaitForTask(task)
         return result_message(f"VM '{vm_name}' migrated successfully", 200)
 
@@ -65,7 +63,18 @@ def complete_vm_migration(vm_moid: str, dist_moid: str,  ip: str, user: str, pas
         vm = conn.get_vm(vm_moid)
         target_host = conn.get_host_system(dist_moid)
 
-        return vm_migration(vm, vm_moid, target_host, dist_moid)
+        result = vm_stop(vm, vm_moid)
+        if result['result']['httpCode'] != 200:
+            return result
+
+        result = vm_migration(vm, vm_moid, target_host, dist_moid)
+        if result['result']['httpCode'] != 200:
+            return result
+
+        result = vm_start(vm, vm_moid)
+        if result['result']['httpCode'] != 200:
+            return result
+        return result_message(f"VM '{vm_moid}' migrated successfully", 200)
 
     except vim.fault.InvalidLogin as _:
         return result_message("Invalid credentials", 401)
