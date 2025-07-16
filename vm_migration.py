@@ -41,7 +41,7 @@ def vm_migration(vm: vim.VirtualMachine, vm_name: str, target_host: vim.HostSyst
         return result_message(f"VM '{vm_name}' migrated successfully", 200)
 
     except vim.fault.InvalidHostState as _:
-        return result_message("Host is unreachable", 400)
+        return result_message("Host is unreachable", 404)
     except Exception as err:
         return result_message(str(err), 400)
 
