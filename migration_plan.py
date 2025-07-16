@@ -85,7 +85,7 @@ def shutdown(v_center: VCenter, ups_grace: UpsGrace, servers: Servers):
 
                 stop_result = vm_migration(vm, vm_moid, dist_host, server.destination.moid)
                 print(stop_result['result']['message'])
-                if stop_result['result']['httpCode'] != 200:
+                if stop_result['result']['httpCode'] == 200:
                     event = VMMigrationEvent(vm_moid, server.host.moid)
                     event_queue.push(event)
                     stop_result = vm_start(vm, vm_moid)
