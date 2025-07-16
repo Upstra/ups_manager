@@ -98,11 +98,25 @@ def vm_metrics_info(vm: vim.VirtualMachine) -> dict:
     return json_object
 
 
+def servers_list_info(hosts: list[vim.HostSystem]) -> dict:
+    """
+    Format Server data to a json dictionary
+    Args:
+        hosts (list[vim.HostSystem]): The list of `HostSystem` object where server data are retrieved
+    Returns:
+        dict: A dictionary formatted for json dump containing the servers data
+    """
+    host_json = [None] * len(hosts)
+    for i, host in enumerate(hosts):
+        host_json[i] = server_info(host)
+    return {"servers": host_json}
+
+
 def server_info(host: vim.HostSystem) -> dict:
     """
     Format Server data to a json dictionary
     Args:
-        host (vim.HostSystem): The Host object where server data are retrieved
+        host (vim.HostSystem): The `HostSystem` object where server data are retrieved
     Returns:
         dict: A dictionary formatted for json dump containing the server data
     """
