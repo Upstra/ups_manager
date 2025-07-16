@@ -115,6 +115,8 @@ def shutdown(v_center: VCenter, ups_grace: UpsGrace, servers: Servers):
 
 
 if __name__ == "__main__":
-    v_center, ups_grace, servers = load_plan_from_yaml("plans/migration.yml")
-    if v_center and ups_grace and servers:
+    try:
+        v_center, ups_grace, servers = load_plan_from_yaml("plans/migration.yml")
         shutdown(v_center, ups_grace, servers)
+    except Exception as err:
+        print(f"Error parsing YAML file: {err}")

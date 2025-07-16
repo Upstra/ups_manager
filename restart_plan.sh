@@ -14,7 +14,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
     exit 1
 fi
 
-RESTART_GRACE=$(grep 'restartGrace:' "$CONFIG_FILE" | awk '{print $2}')
+RESTART_GRACE=$(grep 'restartGrace:' "$CONFIG_FILE" | awk -F': ' '{print $2}')
 if [ -z "$RESTART_GRACE" ]; then
     echo "ERROR: Could not find ups.restartGrace value in $CONFIG_FILE"
     exit 1
@@ -27,6 +27,11 @@ PID=$(pgrep -f "python.*migration_plan\.py$")
 if [ -n "$PID" ]; then
     echo "Killing migration_plan.py (PID $PID)..."
     kill "$PID"
+    sleep 2
+    if kill -0 "$PID" 2>/dev/null; then
+        echo "Process $PID still running, forcing termination..."
+        kill -9 "$PID"
+    fi
 fi
 
 if [ ! -f .venv/bin/activate ]; then

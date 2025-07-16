@@ -68,6 +68,8 @@ def restart(v_center: VCenter, ups_grace: UpsGrace):
 
 
 if __name__ == "__main__":
-    v_center, ups_grace, _ = load_plan_from_yaml("plans/migration.yml")
-    if v_center and ups_grace:
+    try:
+        v_center, ups_grace, _ = load_plan_from_yaml("plans/migration.yml")
         restart(v_center, ups_grace)
+    except Exception as err:
+        print(err)

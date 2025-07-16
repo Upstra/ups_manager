@@ -89,6 +89,10 @@ vCenter:
   password: vCenterPassword
   port: 443
 
+ups:
+  shutdownGrace: 60
+  restartGrace: 60
+
 servers:
   - server:
       host:
@@ -105,14 +109,11 @@ servers:
           ip: 172.2.3.4
           user: user
           password: password
-      shutdown:
-        vmOrder:
-          - vmMoId: vm1
-          - vmMoId: vm2
-          - vmMoId: vm3
-        delay: 60
-      restart:
-        delay: 60
+      vmOrder:
+        - vmMoId: vm1
+        - vmMoId: vm2
+        - vmMoId: vm3
+
 ```
 
 This file is provided as `plans/migration-example.yml` and can be adapted to your environment.
