@@ -23,8 +23,9 @@ def vm_start(vm: vim.VirtualMachine, name: str) -> dict:
 
         task = vm.PowerOn()
         WaitForTask(task)
-        return result_message("VM has been successfully started", 200)
-
+        return result_message(f"VM '{name}' has been successfully started", 200)
+    except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState, vim.fault.HostNotConnected) as _:
+        return result_message("Host is unreachable", 404)
     except Exception as err:
         return result_message(str(err), 400)
 
@@ -34,10 +35,10 @@ def complete_vm_start(moid: str, ip: str, user: str, password: str, port: int) -
     Start a VM
     Args:
         moid (str): The Managed Object ID of the VM to start
-        ip (str): The ip of the VCenter or the ESXI server to connect to
-        user (str): The username of the VCenter or the ESXI server to connect to
-        password (str): The password of the VCenter or the ESXI server to connect to
-        port (int): The port to use to connect to the VCenter or the ESXI server
+        ip (str): The ip of the VCenter to connect to
+        user (str): The username of the VCenter to connect to
+        password (str): The password of the VCenter to connect to
+        port (int): The port to use to connect to the VCenter
     Returns:
         dict: A dictionary formatted for json dump containing the result message. See result_message() function in dto.py
     """
@@ -59,10 +60,10 @@ def complete_vm_start(moid: str, ip: str, user: str, password: str, port: int) -
 if __name__ == "__main__":
     parser = ArgumentParser(description="Allume une VM sur un serveur ESXi")
     parser.add_argument("--moid", required=True, help="Le Managed Object ID de la VM")
-    parser.add_argument("--ip", required=True, help="Adresse IP du vCenter ou du serveur ESXi")
-    parser.add_argument("--user", required=True, help="Nom d'utilisateur du vCenter ou du serveur ESXi")
-    parser.add_argument("--password", required=True, help="Mot de passe du vCenter ou du serveur ESXi")
-    parser.add_argument("--port", type=int, default=443, help="Port du vCenter ou serveur ESXi (optionnel, 443 par défaut)")
+    parser.add_argument("--ip", required=True, help="Adresse IP du vCenter")
+    parser.add_argument("--user", required=True, help="Nom d'utilisateur du vCenter")
+    parser.add_argument("--password", required=True, help="Mot de passe de l'utilisateur du vCenter")
+    parser.add_argument("--port", type=int, default=443, help="Port du vCenter (optionnel, 443 par défaut)")
 
     args = parser.parse_args()
 

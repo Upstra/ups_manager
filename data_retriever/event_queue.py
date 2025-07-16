@@ -37,6 +37,13 @@ class EventQueue:
             print(f"Failed to get events from Redis: {e}")
             return []
 
+    def grace_shutdown(self):
+        """ Notify redis listener of the waiting for power to come back """
+        try:
+            self._redis.set(STATE, "in shutdown grace period")
+        except Exception as e:
+            print(f"Failed to push status to Redis: {e}")
+
     def start_shutdown(self):
         """ Notify redis listener of the start of the migration """
         try:

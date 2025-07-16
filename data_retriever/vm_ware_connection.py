@@ -39,14 +39,16 @@ class VMwareConnection:
         """
         Get a list of VMs stored in the server
         Returns:
-            list[vim.VirtualMachine]: The list of VM object
+            list[vim.VirtualMachine]: The list of `VirtualMachine` object
         """
-        def collect_vms_from_folder(folder, vms):
+        def collect_vms_from_folder(folder: vim.Folder) -> list[vim.VirtualMachine]:
+            vms = []
             for entity in folder.childEntity:
                 if isinstance(entity, vim.VirtualMachine):
                     vms.append(entity)
                 elif isinstance(entity, vim.Folder):
-                    collect_vms_from_folder(entity, vms)
+                    vms.extend(collect_vms_from_folder(entity))
+            return vms
 
         vms = []
         if not self._si:
@@ -58,8 +60,33 @@ class VMwareConnection:
                 if isinstance(entity, vim.VirtualMachine):
                     vms.append(entity)
                 elif isinstance(entity, vim.Folder):
-                    collect_vms_from_folder(entity, vms)
+                    vms.extend(collect_vms_from_folder(entity))
         return vms
+
+    def get_all_hosts(self) -> list[vim.HostSystem]:
+        """
+        Get a list of servers on the architecture of the vCenter
+        Returns:
+            list[vim.HostSystem]: The list of `HostSystem` object
+        """
+        def collect_hosts_from_folder(folder: vim.Folder) -> list[vim.HostSystem]:
+            hosts = []
+            for entity in folder.childEntity:
+                if isinstance(entity, vim.ComputeResource):
+                    hosts.extend(entity.host)
+                elif isinstance(entity, vim.ClusterComputeResource):
+                    hosts.extend(entity.host)
+                elif isinstance(entity, vim.Folder):
+                    hosts.extend(collect_hosts_from_folder(entity))
+            return hosts
+
+        hosts = []
+        if not self._si:
+            return hosts
+        for datacenter in self._content.rootFolder.childEntity:
+            host_folder = datacenter.hostFolder
+            hosts.extend(collect_hosts_from_folder(host_folder))
+        return hosts
 
     def get_vm(self, moid: str) -> vim.VirtualMachine:
         """

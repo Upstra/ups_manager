@@ -7,13 +7,13 @@ from data_retriever.vm_ware_connection import VMwareConnection
 
 def server_metrics(moid: str, ip: str, user: str, password: str, port: int) -> dict:
     """
-    Retrieve metrics of a server from the ESXi server host or the VCenter
+    Retrieve metrics of a server from the VCenter
     Args:
         moid (str): The Managed Object ID of the server to get metrics from
-        ip (str): The ip of the VCenter or the ESXI server to connect to
-        user (str): The username of the VCenter or the ESXI server to connect to
-        password (str): The password of the VCenter or the ESXI server to connect to
-        port (int): The port to use to connect to the VCenter or the ESXI server
+        ip (str): The ip of the VCenter to connect to
+        user (str): The username of the VCenter to connect to
+        password (str): The password of the VCenter to connect to
+        port (int): The port to use to connect to the VCenter
     Returns:
         dict: A dictionary formatted for json dump containing the server metrics (server_metrics_info()), or an error message (result_message())
     """
@@ -37,10 +37,10 @@ def server_metrics(moid: str, ip: str, user: str, password: str, port: int) -> d
 if __name__ == "__main__":
     parser = ArgumentParser(description="Récupérer les métriques d'un serveur")
     parser.add_argument("--moid", required=True, help="Le Managed Object ID du serveur'")
-    parser.add_argument("--ip", required=True, help="Adresse IP du serveur ESXi ou du vCenter")
-    parser.add_argument("--user", required=True, help="Nom d'utilisateur du serveur ESXi ou du vCenter")
-    parser.add_argument("--password", required=True, help="Mot de passe du serveur ESXi ou du vCenter")
-    parser.add_argument("--port", type=int, default=443, help="Port du serveur ESXi ou du vCenter")
+    parser.add_argument("--ip", required=True, help="Adresse IP du vCenter")
+    parser.add_argument("--user", required=True, help="Nom d'utilisateur du vCenter")
+    parser.add_argument("--password", required=True, help="Mot de passe de l'utilisateur du vCenter")
+    parser.add_argument("--port", type=int, default=443, help="Port du vCenter (optionnel, 443 par défaut)")
 
     args = parser.parse_args()
 

@@ -3,15 +3,6 @@ from yaml import safe_load as yaml_load
 
 
 @dataclass
-class Shutdown:
-    vmOrder: list[str]
-    delay: int
-
-@dataclass
-class Restart:
-    delay: int
-
-@dataclass
 class IloYaml:
     ip: str
     user: str
@@ -27,8 +18,7 @@ class Host:
 class Server:
     host: Host
     destination: Host
-    shutdown: Shutdown
-    restart: Restart
+    vm_order: list[str]
 
 @dataclass
 class Servers:
@@ -41,26 +31,26 @@ class VCenter:
     password: str
     port: int
 
+@dataclass
+class UpsGrace:
+    shutdown_grace: int
+    restart_grace: int
 
-def load_plan_from_yaml(file_path: str) -> tuple[VCenter, Servers]:
+
+def load_plan_from_yaml(file_path: str) -> tuple[VCenter, UpsGrace, Servers]:
     """
     Load a migration plan stored in a YAML file
     Args:
         file_path (str): The path to the migration plan
     Returns:
-        tuple[VCenter, Servers]: A `VCenter` object and a list of `Server` objects representing the migration plan
+        tuple[VCenter, UpsGrace, Servers]: A `VCenter` object, an `UpsGrace` object and a list of `Server` objects representing the migration plan
     Raises:
-        FileNotFoundError: If the YAML file doesn't exist
-        yaml.YAMLError: If the YAML file is malformed
-        KeyError: If required keys are missing from the YAML structure
+        FileNotFoundError: If `file_path` is not a valid YAML file
+        KeyError: If YAML file has not a correct format
+        Exception: For any other error
      """
-    try:
-        with open(file_path, 'r') as f:
-            data = yaml_load(f)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Migration plan file not found: {file_path}") from None
-    except Exception as e:
-        raise ValueError(f"Error parsing YAML file: {e}") from e
+    with open(file_path, 'r') as f:
+        data = yaml_load(f)
 
     v_center = VCenter(
         ip=data['vCenter']['ip'],
@@ -69,33 +59,34 @@ def load_plan_from_yaml(file_path: str) -> tuple[VCenter, Servers]:
         port=data['vCenter']['port'] if 'port' in data['vCenter'] else 443,
     )
 
+    ups_grace = UpsGrace(
+        shutdown_grace=data['ups']['shutdownGrace'],
+        restart_grace=data['ups']['restartGrace'],
+    )
+
     servers = Servers(servers=[None] * len(data['servers']))
     for i, server in enumerate(data['servers']):
+        host = server['server']['host']
+        destination = server['server']['destination'] if 'destination' in server['server'] else None
         servers.servers[i] = Server(
             host=Host(
-                name=server['server']['host']['name'],
-                moid=server['server']['host']['moid'],
+                name=host['name'],
+                moid=host['moid'],
                 ilo=IloYaml(
-                    ip=server['server']['host']['ilo']['ip'],
-                    user=server['server']['host']['ilo']['user'],
-                    password=server['server']['host']['ilo']['password'],
+                    ip=host['ilo']['ip'],
+                    user=host['ilo']['user'],
+                    password=host['ilo']['password'],
                 )
             ),
             destination=Host(
-                name=server['server']['destination']['name'],
-                moid=server['server']['destination']['moid'],
+                name=destination['name'],
+                moid=destination['moid'],
                 ilo=IloYaml(
-                    ip=server['server']['destination']['ilo']['ip'],
-                    user=server['server']['destination']['ilo']['user'],
-                    password=server['server']['destination']['ilo']['password'],
+                    ip=destination['ilo']['ip'],
+                    user=destination['ilo']['user'],
+                    password=destination['ilo']['password'],
                 )
-            ) if 'destination' in server['server'] else None,
-            shutdown=Shutdown(
-                vmOrder=[vm['vmMoId'] for vm in server['server']['shutdown']['vmOrder']],
-                delay=server['server']['shutdown']['delay'],
-            ),
-            restart=Restart(
-                delay=server['server']['restart']['delay'],
-            )
+            ) if destination else None,
+            vm_order=[vm['vmMoId'] for vm in server['server']['vmOrder']],
         )
-    return v_center, servers
+    return v_center, ups_grace, servers

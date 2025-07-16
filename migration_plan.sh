@@ -2,6 +2,33 @@
 
 # Usage: ./migration_plan.sh
 
+PID=$(pgrep -f "python.*migration_plan\.py$")
+if [ -n "$PID" ]; then
+    echo "ERROR: migration_plan.py is already running"
+    exit 1
+fi
+
+PID=$(pgrep -f "python.*restart_plan\.py$")
+if [ -n "$PID" ]; then
+    echo "Killing restart_plan.py (PID $PID)..."
+    kill "$PID"
+    sleep 2
+    if kill -0 "$PID" 2>/dev/null; then
+        echo "Process $PID still running, forcing termination..."
+        kill -9 "$PID"
+    fi
+fi
+PID=$(pgrep -f ".*restart_plan\.sh$")
+if [ -n "$PID" ]; then
+    echo "Killing restart_plan.sh (PID $PID)..."
+    kill "$PID"
+    sleep 2
+    if kill -0 "$PID" 2>/dev/null; then
+        echo "Process $PID still running, forcing termination..."
+        kill -9 "$PID"
+    fi
+fi
+
 if [ ! -f .venv/bin/activate ]; then
     echo "ERROR: Virtual environment not found at .venv/bin/activate"
     exit 1
