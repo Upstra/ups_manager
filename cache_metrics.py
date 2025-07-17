@@ -13,6 +13,8 @@ RELOAD_DELAY = 60
 if __name__ == "__main__":
     cache = Cache()
     vcenter = cache.get_vcenter()
+    if vcenter is None:
+        print("No vcenter found")
     conn = VMwareConnection()
     metrics = None
 
