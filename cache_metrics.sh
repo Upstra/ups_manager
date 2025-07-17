@@ -16,6 +16,6 @@ if [[ "$VIRTUAL_ENV" != "$(pwd)/.venv"* ]]; then
 fi
 
 if ! python cache_metrics.py; then
-  echo "ERROR: Failed to start cache_metrics.py"
+  echo "ERROR: Failed to start cache_metrics.py (exit code: $?)"
   exit 1
 fi
