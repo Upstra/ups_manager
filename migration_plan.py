@@ -1,7 +1,7 @@
 from time import sleep
 from pyVmomi import vim
 
-from data_retriever.event_queue import EventQueue
+from data_retriever.migration_event_queue import EventQueue
 from data_retriever.migration_event import VMMigrationEvent, VMShutdownEvent, ServerShutdownEvent, VMStartedEvent
 from data_retriever.vm_ware_connection import VMwareConnection
 from data_retriever.yaml_parser import Server, VCenter, Servers, load_plan_from_yaml, UpsGrace
@@ -39,11 +39,11 @@ def get_distant_host(conn: VMwareConnection, server: Server) -> vim.HostSystem:
     return dist_host
 
 
-def shutdown(v_center: VCenter, ups_grace: UpsGrace, servers: Servers):
+def shutdown(vcenter: VCenter, ups_grace: UpsGrace, servers: Servers):
     """
     Launch the shutdown plan of all servers specified in `servers
     Args:
-        v_center (VCenter): The vCenter that orchestrates the migration plan
+        vcenter (VCenter): The vCenter that orchestrates the migration plan
         ups_grace (UpsGrace): The `UpsGrace` object containing graces periods to wait before shutdown and restart
         servers (Servers): The migration plan for each server
     """
@@ -56,7 +56,7 @@ def shutdown(v_center: VCenter, ups_grace: UpsGrace, servers: Servers):
         sleep(stop_delay)
 
         event_queue.start_shutdown()
-        conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
+        conn.connect(vcenter.ip, vcenter.user, vcenter.password, vcenter.port)
         for server in servers.servers:
             vms = server.vm_order
             current_host = conn.get_host_system(server.host.moid)
@@ -116,7 +116,7 @@ def shutdown(v_center: VCenter, ups_grace: UpsGrace, servers: Servers):
 
 if __name__ == "__main__":
     try:
-        v_center, ups_grace, servers = load_plan_from_yaml("plans/migration.yml")
-        shutdown(v_center, ups_grace, servers)
+        vcenter, ups_grace, servers = load_plan_from_yaml("plans/migration.yml")
+        shutdown(vcenter, ups_grace, servers)
     except Exception as err:
         print(f"Error parsing YAML file: {err}")

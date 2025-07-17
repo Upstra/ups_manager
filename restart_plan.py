@@ -1,7 +1,7 @@
 from time import sleep
 from pyVmomi import vim
 
-from data_retriever.event_queue import EventQueue
+from data_retriever.migration_event_queue import EventQueue
 from data_retriever.migration_event import VMMigrationEvent, VMShutdownEvent, ServerShutdownEvent, VMStartedEvent
 from data_retriever.vm_ware_connection import VMwareConnection
 from data_retriever.yaml_parser import VCenter, load_plan_from_yaml, UpsGrace
@@ -11,18 +11,18 @@ from vm_start import vm_start
 from vm_stop import vm_stop
 
 
-def restart(v_center: VCenter, ups_grace: UpsGrace):
+def restart(vcenter: VCenter, ups_grace: UpsGrace):
     """
     Launch the restart plan of all servers specified in `servers` to go back to the initial state
     Args:
-        v_center (VCenter): The VCenter informations to connect to
+        vcenter (VCenter): The VCenter informations to connect to
         ups_grace (UpsGrace): The `UpsGrace` object containing graces periods to wait before shutdown and restart
     """
     start_delay = ups_grace.restart_grace
     conn = VMwareConnection()
     try:
         event_queue = EventQueue()
-        conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
+        conn.connect(vcenter.ip, vcenter.user, vcenter.password, vcenter.port)
         event_queue.start_restart()
         events = event_queue.get_event_list()
 
@@ -69,7 +69,7 @@ def restart(v_center: VCenter, ups_grace: UpsGrace):
 
 if __name__ == "__main__":
     try:
-        v_center, ups_grace, _ = load_plan_from_yaml("plans/migration.yml")
-        restart(v_center, ups_grace)
+        vcenter, ups_grace, _ = load_plan_from_yaml("plans/migration.yml")
+        restart(vcenter, ups_grace)
     except Exception as err:
         print(err)

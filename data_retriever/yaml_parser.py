@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from yaml import safe_load as yaml_load
 
+from data_retriever.decrypt_password import decrypt
+
 
 @dataclass
 class IloYaml:
@@ -52,10 +54,10 @@ def load_plan_from_yaml(file_path: str) -> tuple[VCenter, UpsGrace, Servers]:
     with open(file_path, 'r') as f:
         data = yaml_load(f)
 
-    v_center = VCenter(
+    vcenter = VCenter(
         ip=data['vCenter']['ip'],
         user=data['vCenter']['user'],
-        password=data['vCenter']['password'],
+        password=decrypt(data['vCenter']['password']),
         port=data['vCenter']['port'] if 'port' in data['vCenter'] else 443,
     )
 
@@ -75,7 +77,7 @@ def load_plan_from_yaml(file_path: str) -> tuple[VCenter, UpsGrace, Servers]:
                 ilo=IloYaml(
                     ip=host['ilo']['ip'],
                     user=host['ilo']['user'],
-                    password=host['ilo']['password'],
+                    password=decrypt(host['ilo']['password']),
                 )
             ),
             destination=Host(
@@ -84,9 +86,9 @@ def load_plan_from_yaml(file_path: str) -> tuple[VCenter, UpsGrace, Servers]:
                 ilo=IloYaml(
                     ip=destination['ilo']['ip'],
                     user=destination['ilo']['user'],
-                    password=destination['ilo']['password'],
+                    password=decrypt(destination['ilo']['password']),
                 )
             ) if destination else None,
             vm_order=[vm['vmMoId'] for vm in server['server']['vmOrder']],
         )
-    return v_center, ups_grace, servers
+    return vcenter, ups_grace, servers
