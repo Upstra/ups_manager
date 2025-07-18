@@ -2,12 +2,11 @@ from redis import Redis
 from dotenv import load_dotenv
 from os import environ as env
 
-from data_retriever.cache_element import deserialize_element, VCenterElement, deserialize_vcenter, VMwareElement
+from data_retriever.cache_element import VCenterElement, deserialize_vcenter
 
 load_dotenv()
 
 VCENTER = "metrics:vcenter"
-ELEMENTS = "metrics:elements"
 METRICS = "metrics:metrics"
 
 class CacheException(Exception):
@@ -32,19 +31,6 @@ class Cache:
             self._redis.ping()
         except Exception as e:
             raise CacheException(f"Failed to connect to Redis: {e}") from e
-
-    def get_elements(self) -> list[VMwareElement]:
-        """
-        Get all VMware elements that we need to get metrics from
-        Returns:
-            (list[VMwareElement]): The VMware elements that we need to get metrics from
-        Raises:
-            CacheException: If an error occured while getting VMware elements
-        """
-        try:
-            return [deserialize_element(element) for element in self._redis.lrange(ELEMENTS, 0, -1)]
-        except Exception as e:
-            raise CacheException(f"Failed to get elements from Redis: {e}") from e
 
     def get_vcenter(self) -> VCenterElement:
         """

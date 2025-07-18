@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from json import dumps as json_dumps, loads as json_loads
+from pyVmomi import vim
 
 from data_retriever.decrypt_password import decrypt, DecryptionException
 
@@ -17,32 +18,31 @@ class VCenterElement:
     port: int
 
 
-def serialize_element(element: VMwareElement) -> str:
+def serialize_vm(vm: vim.VirtualMachine) -> str:
     """
-    Serialize a `VMwareElement` object into a JSON string
+    Serialize a `VirtualMachine` object into a JSON string
     Args:
-        element (VMwareElement): The element to serialize
+        vm (vim.VirtualMachine): The VM to serialize
     Returns:
-        str: Json formatted string representation of a VMwareElement
+        str: Json formatted string representation of a VM
     """
     return json_dumps({
-        "type": element.type,
-        "moid": element.moid,
+        "type": "VM",
+        "moid": vm._moId,
     })
 
-def deserialize_element(element_json: str) -> VMwareElement:
+def serialize_server(vm: vim.HostSystem) -> str:
     """
-    Deserialize a JSON string into an `Element` object
+    Serialize a `Server` object into a JSON string
     Args:
-        element_json: (str): Json formatted string representation of an `Element`
+        vm (vim.HostSystem): The VM to serialize
     Returns:
-        VMwareElement: The deserialized element
+        str: Json formatted string representation of a Server
     """
-    try:
-        obj = json_loads(element_json)
-        return VMwareElement(obj["type"], obj["moid"])
-    except Exception as e:
-        raise ValueError(f"Invalid JSON format: {e}") from e
+    return json_dumps({
+        "type": "Server",
+        "moid": vm._moId,
+    })
 
 def deserialize_vcenter(vcenter_json: str) -> VCenterElement:
     """

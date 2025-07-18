@@ -4,7 +4,7 @@ from json import dumps as json_dumps
 import logging
 
 from data_retriever.cache import Cache, CacheException
-from data_retriever.cache_element import serialize_element
+from data_retriever.cache_element import serialize_server, serialize_vm
 from data_retriever.dto import vm_metrics_info, server_metrics_info
 from data_retriever.vm_ware_connection import VMwareConnection
 
@@ -31,22 +31,16 @@ if __name__ == "__main__":
                 vcenter = cache.get_vcenter()
             conn.connect(vcenter.ip, vcenter.user, vcenter.password, vcenter.port)
             while True:
-                elements = cache.get_elements()
-                for element in elements:
-                    if element.type == "VM":
-                        vm = conn.get_vm(element.moid)
-                        if not vm:
-                            continue
-                        metrics = vm_metrics_info(vm)
-                    elif element.type == "Server":
-                        server = conn.get_host_system(element.moid)
-                        if not server:
-                            continue
-                        metrics = server_metrics_info(server)
-                    else:
-                        continue
-                    if metrics:
-                        cache.set_metrics(serialize_element(element), json_dumps(metrics))
+                vms = conn.get_all_vms()
+                for vm in vms:
+                    metrics = vm_metrics_info(vm)
+                    cache.set_metrics(serialize_vm(vm), json_dumps(metrics))
+
+                servers = conn.get_all_hosts()
+                for server in servers:
+                    metrics = server_metrics_info(server)
+                    cache.set_metrics(serialize_server(server), json_dumps(metrics))
+
                 sleep(RELOAD_DELAY)
         except CacheException as e:
             sleep(RELOAD_DELAY)
