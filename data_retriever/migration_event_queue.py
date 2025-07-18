@@ -3,9 +3,10 @@ from os import environ as env, remove as remove_file
 from os.path import exists as path_exists
 from enum import Enum
 from psycopg2 import connect as postgres
+from pyVmomi.vim.event import MigrationEvent
 
-from data_retriever.migration_event import deserialize_event, serialize_event, VMShutdownEvent, serialize_event_type
-
+from data_retriever.migration_event import deserialize_event, serialize_event, VMShutdownEvent, serialize_event_type, \
+    MigrationErrorEvent
 
 SAVED_MIGRATION_ID = "plans/migration_id"
 
@@ -43,19 +44,24 @@ class EventQueue:
         except Exception as e:
             raise ConnectionError(f"Failed to close Postgres connection: {e}") from e
 
-    def push(self, event, is_migration=True):
+    def push(self, event, is_rollback=False):
         """
         Push an event to the queue
         Args:
             event (VMMigrationEvent | VMShutdownEvent | ServerShutdownEvent): The event to push to the queue
-            is_migration (bool): Whether the event occured during migration or rollback. Default to True for migration
+            is_rollback (bool): Whether the event occured during migration or rollback. Default to False for migration
         """
         if self._migration_id == "":
             self._generate_migration_id()
             if self._migration_id != "":
                 print("No migration has been started")
                 return
-        migration_id = ("migration" if is_migration else "rollback") + "_" + self._migration_id
+        if isinstance(event, MigrationErrorEvent):
+            migration_id = f"error_{self._migration_id}"
+        elif is_rollback:
+            migration_id = f"rollback_{self._migration_id}"
+        else:
+            migration_id = f"rollback_{self._migration_id}"
         try:
             self._cursor.execute("""
                 INSERT INTO "history_event" (
