@@ -38,6 +38,7 @@ class EventQueue:
             db_name = env.get('DB_NAME')
             db_username = env.get('DB_USERNAME')
             db_password = env.get('DB_PASSWORD')
+            print(db_host, db_port, db_name, db_username, db_password)
             self._conn = postgres(
                 host=db_host,
                 port=db_port,
