@@ -59,7 +59,7 @@ class Cache:
             if vcenter:
                 return deserialize_vcenter(vcenter)
             else:
-                raise CacheException(f"vCenter wasn't found in Redis")
+                return None
         except Exception as e:
             raise CacheException(f"Failed to get vCenter from Redis: {e}") from e
 
