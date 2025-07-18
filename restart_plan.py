@@ -21,7 +21,6 @@ def restart(vcenter: VCenter, ups_grace: UpsGrace):
     """
     start_delay = ups_grace.restart_grace
     conn = VMwareConnection()
-    event_queue = None
     try:
         event_queue = EventQueue()
         conn.connect(vcenter.ip, vcenter.user, vcenter.password, vcenter.port)
@@ -73,19 +72,24 @@ def restart(vcenter: VCenter, ups_grace: UpsGrace):
                 event = MigrationErrorEvent("Unsupported event", f"Unknown event type: {event}")
                 event_queue.push(event, True)
                 continue
-
+        event_queue.finish_restart()
+        event_queue.disconnect()
     except EventQueueException as e:
         event = MigrationErrorEvent("Database error", str(e))
         event_queue.push(event)
+        event_queue.finish_restart()
+        event_queue.disconnect()
     except vim.fault.InvalidLogin as _:
         event = MigrationErrorEvent("Invalid credentials", "Username or password is incorrect")
         event_queue.push(event)
+        event_queue.finish_restart()
+        event_queue.disconnect()
     except Exception as e:
         event = MigrationErrorEvent("Unknown error", str(e))
         event_queue.push(event)
-    finally:
         event_queue.finish_restart()
         event_queue.disconnect()
+    finally:
         conn.disconnect()
 
 
