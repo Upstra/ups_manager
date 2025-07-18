@@ -90,8 +90,10 @@ def restart(vcenter: VCenter, ups_grace: UpsGrace):
 
 
 if __name__ == "__main__":
+    vcenter, ups_grace = None, None
     try:
         vcenter, ups_grace, _ = load_plan_from_yaml("plans/migration.yml")
-        restart(vcenter, ups_grace)
     except Exception as e:
         print(f"Error parsing YAML file: {e}")
+    if vcenter and ups_grace:
+        restart(vcenter, ups_grace)
