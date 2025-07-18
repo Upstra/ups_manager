@@ -20,7 +20,6 @@ if __name__ == "__main__":
         while not vcenter:
             sleep(RELOAD_DELAY)
             vcenter = cache.get_vcenter()
-
         conn.connect(vcenter.ip, vcenter.user, vcenter.password, vcenter.port)
         while True:
             elements = cache.get_elements()

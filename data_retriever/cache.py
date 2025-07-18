@@ -14,7 +14,18 @@ class CacheException(Exception):
 class Cache:
     def __init__(self):
         try:
-            self._redis = Redis()
+            host = env.get('REDIS_HOST')
+            port = int(env.get('REDIS_PORT'))
+            password = env.get('REDIS_PASSWORD')
+            username = env.get('REDIS_USERNAME')
+
+            self._redis = Redis(
+                host=host,
+                port=port,
+                password=password,
+                username=username,
+                decode_responses=True
+            )
             self._redis.ping()
         except Exception as e:
             raise CacheException(f"Failed to connect to Redis: {e}") from e
@@ -41,7 +52,11 @@ class Cache:
             CacheException: If an error occured while getting vCenter element
         """
         try:
-            return deserialize_vcenter(self._redis.get(VCENTER))
+            vcenter = self._redis.get(VCENTER)
+            if vcenter:
+                return deserialize_vcenter(vcenter)
+            else:
+                return None
         except Exception as e:
             raise CacheException(f"Failed to get vCenter from Redis: {e}") from e
 
