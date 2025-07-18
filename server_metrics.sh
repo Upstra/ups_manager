@@ -15,7 +15,4 @@ if [[ "$VIRTUAL_ENV" != "$(pwd)/.venv"* ]]; then
     exit 1
 fi
 
-if ! python server_metrics.py "$@"; then
-  echo "ERROR: Failed to start server_metrics.py (exit code: $?)"
-  exit 1
-fi
+python server_metrics.py "$@"

@@ -15,7 +15,4 @@ if [[ "$VIRTUAL_ENV" != "$(pwd)/.venv"* ]]; then
     exit 1
 fi
 
-if ! python vm_start.py "$@"; then
-  echo "ERROR: Failed to start vm_start.py (exit code: $?)"
-  exit 1
-fi
+python vm_start.py "$@"

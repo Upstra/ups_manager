@@ -15,7 +15,4 @@ if [[ "$VIRTUAL_ENV" != "$(pwd)/.venv"* ]]; then
     exit 1
 fi
 
-if ! python vm_migration.py "$@"; then
-  echo "ERROR: Failed to start vm_migration.py (exit code: $?)"
-  exit 1
-fi
+python vm_migration.py "$@"

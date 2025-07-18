@@ -15,7 +15,4 @@ if [[ "$VIRTUAL_ENV" != "$(pwd)/.venv"* ]]; then
     exit 1
 fi
 
-if ! python list_server.py "$@"; then
-  echo "ERROR: Failed to start list_server.py (exit code: $?)"
-  exit 1
-fi
+python list_server.py "$@"
