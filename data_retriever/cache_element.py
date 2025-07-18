@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from json import dumps as json_dumps, loads as json_loads
 
-from data_retriever.decrypt_password import decrypt
+from data_retriever.decrypt_password import decrypt, DecryptionException
 
 
 @dataclass
@@ -60,5 +60,7 @@ def deserialize_vcenter(vcenter_json: str) -> VCenterElement:
             port = None
         decrypted_password = decrypt(obj["password"])
         return VCenterElement(obj["ip"], obj["user"], decrypted_password, port)
+    except DecryptionException as e:
+        raise e
     except Exception as e:
         raise ValueError(f"Invalid JSON format: {e}") from e

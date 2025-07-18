@@ -3,12 +3,15 @@ from os import environ as env, remove as remove_file
 from os.path import exists as path_exists
 from enum import Enum
 from psycopg2 import connect as postgres
-from pyVmomi.vim.event import MigrationEvent
 
 from data_retriever.migration_event import deserialize_event, serialize_event, VMShutdownEvent, serialize_event_type, \
     MigrationErrorEvent
 
 SAVED_MIGRATION_ID = "plans/migration_id"
+
+class EventQueueException(Exception):
+    def __init__(self, message):
+        self.message = message
 
 class MigrationStatus(str, Enum):
     POWER_FAILURE = "POWER_FAILURE"     # A power failure occured, start of the grace period
@@ -35,14 +38,19 @@ class EventQueue:
             self._cursor = self._conn.cursor()
             self._migration_id = ""
         except Exception as e:
-            raise ConnectionError(f"Failed to connect to Postgres: {e}") from e
+            raise EventQueueException(f"Failed to connect to Postgres: {e}") from e
 
     def disconnect(self):
+        """
+        Disconnect from Postgres
+        Raises:
+            EventQueueException: If deconnection could not be performed
+        """
         try:
             self._cursor.close()
             self._conn.close()
         except Exception as e:
-            raise ConnectionError(f"Failed to close Postgres connection: {e}") from e
+            raise EventQueueException(f"Failed to close Postgres connection: {e}") from e
 
     def push(self, event, is_rollback=False):
         """
@@ -50,12 +58,13 @@ class EventQueue:
         Args:
             event (VMMigrationEvent | VMShutdownEvent | ServerShutdownEvent): The event to push to the queue
             is_rollback (bool): Whether the event occured during migration or rollback. Default to False for migration
+        Raises:
+            EventQueueException: If push could not be performed
         """
         if self._migration_id == "":
             self._generate_migration_id()
             if self._migration_id != "":
-                print("No migration has been started")
-                return
+                EventQueueException("No migration has been started")
         if isinstance(event, MigrationErrorEvent):
             migration_id = f"error_{self._migration_id}"
         elif is_rollback:
@@ -72,19 +81,20 @@ class EventQueue:
                 """, (migration_id, serialize_event_type(event), serialize_event(event))
             )
         except Exception as e:
-            print(f"Failed to push event to Redis: {e}")
+            EventQueueException(f"Failed to push event to Redis: {e}")
 
     def get_event_list(self):
         """
         Get all events from the queue
         Returns:
             (list[VMMigrationEvent | VMShutdownEvent | ServerShutdownEvent]): All events pushed to the queue
+        Raises:
+            EventQueueException: If no events could be pulled
         """
         if self._migration_id == "":
             self._generate_migration_id()
             if self._migration_id != "":
-                print("No migration has been started")
-                return []
+                EventQueueException("No migration has been started")
         migration_id = "migration_" + self._migration_id
         try:
             self._cursor.execute("""
@@ -95,8 +105,7 @@ class EventQueue:
                 print(row)
             return [deserialize_event(row['action'], row['metadata']) for row in rows]
         except Exception as e:
-            print(f"Failed to get events from Redis: {e}")
-            return []
+            EventQueueException(f"Failed to get events from Redis: {e}")
 
     def _generate_migration_id(self):
         """ Generate migration id to save current migration events """
@@ -119,6 +128,8 @@ class EventQueue:
         Send a migration status in log to notify of the current status of the migration
         Args:
             status (str): The migration status
+        Raises:
+            EventQueueException: If status could not be sent
         """
         try:
             self._cursor.execute("""
@@ -127,26 +138,46 @@ class EventQueue:
             """, (status,))
             self._conn.commit()
         except Exception as e:
-            print(f"Failed to push {status} status to Postgres: {e}")
+            EventQueueException(f"Failed to push {status} status to Postgres: {e}")
 
     def grace_shutdown(self):
-        """ Send a POWER_FAILURE status in log to notify of a power failure, and of the start of the grace period """
+        """
+        Send a POWER_FAILURE status in log to notify of a power failure, and of the start of the grace period
+        Raises:
+            EventQueueException: If status POWER_FAILURE could not be sent
+        """
         self._send_status(MigrationStatus.POWER_FAILURE)
 
     def start_shutdown(self):
-        """ Send a START_MIGRATION status in log to notify of the start of the execution of the migration plan """
+        """
+        Send a START_MIGRATION status in log to notify of the start of the execution of the migration plan
+        Raises:
+            EventQueueException: If status START_MIGRATION could not be sent
+        """
         self._send_status(MigrationStatus.START_MIGRATION)
         self._generate_migration_id()
 
     def finish_shutdown(self):
-        """ Send a END_MIGRATION status in log to notify of the end of the execution of the migration plan """
+        """
+        Send a END_MIGRATION status in log to notify of the end of the execution of the migration plan
+        Raises:
+            EventQueueException: If status END_MIGRATION could not be sent
+        """
         self._send_status(MigrationStatus.END_MIGRATION)
 
     def start_restart(self):
-        """ Send a START_ROLLBACK status in log to notify of the start of the rollback of the migration plan """
+        """
+        Send a START_ROLLBACK status in log to notify of the start of the rollback of the migration plan
+        Raises:
+            EventQueueException: If status START_ROLLBACK could not be sent
+        """
         self._send_status(MigrationStatus.START_ROLLBACK)
 
     def finish_restart(self):
-        """ Send a END_ROLLBACK status in log to notify of the end of the rollback of the migration plan """
+        """
+        Send a END_ROLLBACK status in log to notify of the end of the rollback of the migration plan
+        Raises:
+            EventQueueException: If status END_ROLLBACK could not be sent
+        """
         self._send_status(MigrationStatus.START_ROLLBACK)
         self._delete_migration_id()

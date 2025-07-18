@@ -4,6 +4,10 @@ from Crypto.Protocol.KDF import scrypt
 from os import environ as env
 
 
+class DecryptionException(Exception):
+    def __init__(self, message):
+        self.message = message
+
 def decrypt(encrypted_base64: str) -> str:
     """
     Decrypt a base64 encoded encrypted password
@@ -11,6 +15,8 @@ def decrypt(encrypted_base64: str) -> str:
         encrypted_base64 (str): base64 encoded encrypted password
     Returns:
         str: decrypted password
+    Raises:
+        DecryptionException: If encrypted password cannot be decrypted
     """
     try:
         secret_key = env.get('ENCRYPTION_KEY')
@@ -28,5 +34,4 @@ def decrypt(encrypted_base64: str) -> str:
         decrypted = cipher.decrypt_and_verify(ciphertext, auth_tag)
         return decrypted.decode('utf-8')
     except Exception as e:
-        print(f"Decryption failed: {e}")
-        raise
+        raise DecryptionException(e)

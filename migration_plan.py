@@ -1,7 +1,7 @@
 from time import sleep
 from pyVmomi import vim
 
-from data_retriever.migration_event_queue import EventQueue
+from data_retriever.migration_event_queue import EventQueue, EventQueueException
 from data_retriever.migration_event import VMMigrationEvent, VMShutdownEvent, ServerShutdownEvent, VMStartedEvent, \
     MigrationErrorEvent
 from data_retriever.vm_ware_connection import VMwareConnection
@@ -23,18 +23,18 @@ def get_distant_host(conn: VMwareConnection, server: Server) -> vim.HostSystem:
         vim.HostSystem: The `HostSystem` object representing the distant server, or None if the server is unavailable
     """
     if not server.destination:
-        print(f"Distant server not set")
+        # print(f"Distant server not set")
         return None
 
     dist_host = conn.get_host_system(server.destination.moid)
     if not dist_host:
-        print(f"Distant server '{server.destination.name}' ({server.destination.moid}) not found")
+        # print(f"Distant server '{server.destination.name}' ({server.destination.moid}) not found")
         return None
 
     if dist_host.runtime.powerState == vim.HostSystem.PowerState.poweredOff:
         start_result = server_start(server.destination.ilo.ip, server.destination.ilo.user, server.destination.ilo.password)
         if start_result['result']['httpCode'] != 200:
-            print(f"Distant server '{server.destination.name}' ({server.destination.moid}) is off and won't turn on : {start_result['result']['message']}")
+            # print(f"Distant server '{server.destination.name}' ({server.destination.moid}) is off and won't turn on : {start_result['result']['message']}")
             return None
 
     return dist_host
@@ -102,8 +102,8 @@ def shutdown(vcenter: VCenter, ups_grace: UpsGrace, servers: Servers):
             else:
                 event = MigrationErrorEvent("Server won't stop", stop_result['result']['message'])
             event_queue.push(event)
-    except ConnectionError as e:
-        event = MigrationErrorEvent("Connection error", str(e))
+    except EventQueueException as e:
+        event = MigrationErrorEvent("Database error", str(e))
         event_queue.push(event)
     except vim.fault.InvalidLogin as _:
         event = MigrationErrorEvent("Invalid credentials", "Username or password is incorrect")
@@ -121,5 +121,5 @@ if __name__ == "__main__":
     try:
         vcenter, ups_grace, servers = load_plan_from_yaml("plans/migration.yml")
         shutdown(vcenter, ups_grace, servers)
-    except Exception as err:
-        print(f"Error parsing YAML file: {err}")
+    except Exception as e:
+        print(f"Error parsing YAML file: {e}")

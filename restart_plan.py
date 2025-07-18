@@ -1,7 +1,7 @@
 from time import sleep
 from pyVmomi import vim
 
-from data_retriever.migration_event_queue import EventQueue
+from data_retriever.migration_event_queue import EventQueue, EventQueueException
 from data_retriever.migration_event import VMMigrationEvent, VMShutdownEvent, ServerShutdownEvent, VMStartedEvent, \
     MigrationErrorEvent, ServerStartedEvent
 from data_retriever.vm_ware_connection import VMwareConnection
@@ -74,8 +74,8 @@ def restart(vcenter: VCenter, ups_grace: UpsGrace):
                 event_queue.push(event, True)
                 continue
 
-    except ConnectionError as e:
-        event = MigrationErrorEvent("Connection error", str(e))
+    except EventQueueException as e:
+        event = MigrationErrorEvent("Database error", str(e))
         event_queue.push(event)
     except vim.fault.InvalidLogin as _:
         event = MigrationErrorEvent("Invalid credentials", "Username or password is incorrect")
@@ -93,5 +93,5 @@ if __name__ == "__main__":
     try:
         vcenter, ups_grace, _ = load_plan_from_yaml("plans/migration.yml")
         restart(vcenter, ups_grace)
-    except Exception as err:
-        print(err)
+    except Exception as e:
+        print(f"Error parsing YAML file: {e}")
