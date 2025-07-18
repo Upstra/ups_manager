@@ -1,6 +1,7 @@
 from time import sleep
 from pyVmomi import vim
 from json import dumps as json_dumps
+import logging
 
 from data_retriever.cache import Cache, CacheException
 from data_retriever.cache_element import serialize_element
@@ -11,6 +12,13 @@ from data_retriever.vm_ware_connection import VMwareConnection
 RELOAD_DELAY = 60
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        filename='cache_metrics.log',
+        level=logging.ERROR,
+        format='%(asctime)s %(message)s',
+        datefmt='%d-%m-%Y %H:%M:%S'
+    )
+
     conn = VMwareConnection()
     metrics = None
 
@@ -42,7 +50,10 @@ if __name__ == "__main__":
                 sleep(RELOAD_DELAY)
         except CacheException as e:
             sleep(RELOAD_DELAY)
+            logging.error(e)
         except vim.fault.InvalidLogin as _:
             sleep(RELOAD_DELAY)
+            logging.error("Invalid credentials")
         except Exception as e:
             sleep(RELOAD_DELAY)
+            logging.error(e)
