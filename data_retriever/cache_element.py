@@ -58,8 +58,12 @@ def deserialize_vcenter(vcenter_json: str) -> VCenterElement:
             port = obj["port"]
         else:
             port = None
-        decrypted_password = decrypt(obj["password"])
-        return VCenterElement(obj["ip"], obj["user"], decrypted_password, port)
+        ip = obj["ip"] if "ip" in obj else None
+        password = decrypt(obj["password"]) if "password" in obj else None
+        user = obj["user"] if "user" in obj else None
+        if not ip or not password or not user:
+            raise ValueError(f"Ip, password or user is None: {vcenter_json}")
+        return VCenterElement(ip, user, password, port)
     except DecryptionException as e:
         raise e
     except Exception as e:
