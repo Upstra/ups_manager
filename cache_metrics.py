@@ -14,36 +14,35 @@ if __name__ == "__main__":
     conn = VMwareConnection()
     metrics = None
 
-    try:
-        cache = Cache()
-        vcenter = cache.get_vcenter()
-        while not vcenter:
-            sleep(RELOAD_DELAY)
+    while True:
+        try:
+            cache = Cache()
             vcenter = cache.get_vcenter()
-        conn.connect(vcenter.ip, vcenter.user, vcenter.password, vcenter.port)
-        while True:
-            elements = cache.get_elements()
-            for element in elements:
-                if element.type == "VM":
-                    vm = conn.get_vm(element.moid)
-                    if not vm:
+            while not vcenter:
+                sleep(RELOAD_DELAY)
+                vcenter = cache.get_vcenter()
+            conn.connect(vcenter.ip, vcenter.user, vcenter.password, vcenter.port)
+            while True:
+                elements = cache.get_elements()
+                for element in elements:
+                    if element.type == "VM":
+                        vm = conn.get_vm(element.moid)
+                        if not vm:
+                            continue
+                        metrics = vm_metrics_info(vm)
+                    elif element.type == "Server":
+                        server = conn.get_host_system(element.moid)
+                        if not server:
+                            continue
+                        metrics = server_metrics_info(server)
+                    else:
                         continue
-                    metrics = vm_metrics_info(vm)
-                elif element.type == "Server":
-                    server = conn.get_host_system(element.moid)
-                    if not server:
-                        continue
-                    metrics = server_metrics_info(server)
-                else:
-                    continue
-                if metrics:
-                    cache.set_metrics(serialize_element(element), json_dumps(metrics))
+                    if metrics:
+                        cache.set_metrics(serialize_element(element), json_dumps(metrics))
+                sleep(RELOAD_DELAY)
+        except CacheException as e:
             sleep(RELOAD_DELAY)
-    except CacheException as e:
-        print(e)
-    except vim.fault.InvalidLogin as _:
-       print("Invalid credentials")
-    except Exception as e:
-        print(e)
-    finally:
-        conn.disconnect()
+        except vim.fault.InvalidLogin as _:
+            sleep(RELOAD_DELAY)
+        except Exception as e:
+            sleep(RELOAD_DELAY)
