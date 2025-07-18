@@ -18,7 +18,7 @@ class Cache:
     def __init__(self):
         try:
             host = env.get('REDIS_HOST')
-            port = env.get('REDIS_PORT')
+            port = int(env.get('REDIS_PORT'))
             password = env.get('REDIS_PASSWORD')
             username = env.get('REDIS_USERNAME')
 
