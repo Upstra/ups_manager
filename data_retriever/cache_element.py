@@ -26,23 +26,17 @@ def serialize_vm(vm: vim.VirtualMachine) -> str:
     Returns:
         str: Json formatted string representation of a VM
     """
-    return json_dumps({
-        "type": "VM",
-        "moid": vm._moId,
-    })
+    return "{\"type\":\"VM\",\"moid\":\"" + vm._moId + "\"}"
 
-def serialize_server(vm: vim.HostSystem) -> str:
+def serialize_server(server: vim.HostSystem) -> str:
     """
     Serialize a `Server` object into a JSON string
     Args:
-        vm (vim.HostSystem): The VM to serialize
+        server (vim.HostSystem): The VM to serialize
     Returns:
         str: Json formatted string representation of a Server
     """
-    return json_dumps({
-        "type": "Server",
-        "moid": vm._moId,
-    })
+    return "{\"type\":\"Server\",\"moid\":\"" + server._moId + "\"}"
 
 def deserialize_vcenter(vcenter_json: str) -> VCenterElement:
     """
