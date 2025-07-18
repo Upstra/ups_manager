@@ -42,6 +42,11 @@ if __name__ == "__main__":
                     cache.set_metrics(serialize_server(server), json_dumps(metrics))
 
                 sleep(RELOAD_DELAY)
+                new_vcenter = cache.get_vcenter()
+                if not new_vcenter or vcenter != new_vcenter:
+                    conn.disconnect()
+                    break
+
         except CacheException as e:
             sleep(RELOAD_DELAY)
             logging.error(e)
