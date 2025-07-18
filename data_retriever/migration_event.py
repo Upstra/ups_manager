@@ -1,5 +1,8 @@
 from dataclasses import dataclass
+from enum import Enum
 from json import dumps as json_dumps, loads as json_loads
+
+from typing_extensions import dataclass_transform
 
 
 @dataclass
@@ -18,18 +21,53 @@ class VMStartedEvent:
     server_moid: str
 
 @dataclass
+class ServerStartedEvent:
+    server_moid: str
+
+@dataclass
 class ServerShutdownEvent:
     server_moid: str
     ilo_ip: str
     ilo_user: str
     ilo_password: str
 
+
+class ActionType(str, Enum):
+    VM_STARTED = "VM_STARTED"
+    VM_MIGRATED = "VM_MIGRATED"
+    VM_STOPPED = "VM_STOPPED"
+    SERVER_STARTED = "SERVER_STARTED"
+    SERVER_STOPPED = "SERVER_STOPPED"
+
 EVENT_CLASSES = {
-    "VMStartedEvent": VMStartedEvent,
-    "VMMigrationEvent": VMMigrationEvent,
-    "VMShutdownEvent": VMShutdownEvent,
-    "ServerShutdownEvent": ServerShutdownEvent,
+    str(ActionType.VM_STARTED): VMStartedEvent,
+    str(ActionType.VM_MIGRATED): VMMigrationEvent,
+    str(ActionType.VM_STOPPED): VMShutdownEvent,
+    str(ActionType.SERVER_STARTED): ServerStartedEvent,
+    str(ActionType.SERVER_STOPPED): ServerShutdownEvent,
 }
+
+def serialize_event_type(event) -> str:
+    """
+    Serialize an Event type from its object into a status string
+    Args:
+        event (VMMigrationEvent | VMShutdownEvent | ServerShutdownEvent): The event to get type from and to serialize
+    Returns:
+        str: A string representing the event type in Postgres log
+    Raises: TypeError if the event type is not supported
+    """
+    if isinstance(event, VMStartedEvent):
+        return ActionType.VM_STARTED
+    elif isinstance(event, VMMigrationEvent):
+        return ActionType.VM_MIGRATED
+    elif isinstance(event, VMShutdownEvent):
+        return ActionType.VM_STOPPED
+    elif isinstance(event, ServerStartedEvent):
+        return ActionType.SERVER_STARTED
+    elif isinstance(event, ServerShutdownEvent):
+        return ActionType.SERVER_STOPPED
+    else:
+        raise TypeError("Unknown event type")
 
 def serialize_event(event) -> str:
     """
@@ -39,29 +77,25 @@ def serialize_event(event) -> str:
     Returns:
         str: Json formatted string representation of an Event
     """
-    return json_dumps({
-        "event_type": type(event).__name__,
-        "data": event.__dict__,
-    })
+    return json_dumps(event.__dict__)
 
-def deserialize_event(event_json: str):
+def deserialize_event(event_type: str, event_json: str):
     """
     Deserialize a JSON string into an Event object
     Args:
+        event_type (str): The type of event to deserialize
         event_json: (str): Json formatted string representation of an Event
     Returns:
         VMMigrationEvent | VMShutdownEvent | ServerShutdownEvent: The deserialized event
     Raises:
         ValueError: If JSON is malformed or event type is unknown
     """
+    if event_type not in EVENT_CLASSES:
+        raise ValueError(f"Unknown event type: {event_type}")
     try:
         obj = json_loads(event_json)
     except Exception as e:
         raise ValueError(f"Invalid JSON format: {e}") from e
-
-    event_type = obj.get("event_type")
-    if event_type not in EVENT_CLASSES:
-        raise ValueError(f"Unknown event type: {event_type}")
 
     cls = EVENT_CLASSES[event_type]
     try:

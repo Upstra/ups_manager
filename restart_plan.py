@@ -55,6 +55,7 @@ def restart(vcenter: VCenter, ups_grace: UpsGrace):
                 continue
             print(start_result['result']['message'])
         event_queue.finish_restart()
+        event_queue.disconnect()
         print("Rollback complete")
 
     except ConnectionError as err:

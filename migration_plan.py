@@ -103,6 +103,7 @@ def shutdown(vcenter: VCenter, ups_grace: UpsGrace, servers: Servers):
             else:
                 print(f"Couldn't stop server '{server.host.name}' ({server.host.moid})")
         event_queue.finish_shutdown()
+        event_queue.disconnect()
     except ConnectionError as err:
         print(err)
     except vim.fault.InvalidLogin as _:
