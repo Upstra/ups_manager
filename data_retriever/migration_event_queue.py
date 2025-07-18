@@ -22,6 +22,16 @@ class MigrationStatus(str, Enum):
 
 class EventQueue:
     def __init__(self):
+        self._conn = None
+        self._cursor = None
+        self._migration_id = ""
+
+    def connect(self):
+        """
+        Connect to Postgres
+        Raises:
+            EventQueueException: If connection could not be performed
+        """
         try:
             db_host = env.get('DB_HOST')
             db_port = env.get('DB_PORT')
@@ -46,6 +56,8 @@ class EventQueue:
         Raises:
             EventQueueException: If deconnection could not be performed
         """
+        if not self._conn or not self._cursor:
+            raise EventQueueException(f"Postgres connection not established")
         try:
             self._cursor.close()
             self._conn.close()
@@ -61,6 +73,8 @@ class EventQueue:
         Raises:
             EventQueueException: If push could not be performed
         """
+        if not self._conn or not self._cursor:
+            raise EventQueueException(f"Postgres connection not established")
         if self._migration_id == "":
             self._generate_migration_id()
             if self._migration_id != "":
@@ -91,6 +105,8 @@ class EventQueue:
         Raises:
             EventQueueException: If no events could be pulled
         """
+        if not self._conn or not self._cursor:
+            raise EventQueueException(f"Postgres connection not established")
         if self._migration_id == "":
             self._generate_migration_id()
             if self._migration_id != "":
@@ -131,6 +147,8 @@ class EventQueue:
         Raises:
             EventQueueException: If status could not be sent
         """
+        if not self._conn or not self._cursor:
+            raise EventQueueException(f"Postgres connection not established")
         try:
             self._cursor.execute("""
                 INSERT INTO "history_event" ("entity", "entityId", "action", "userAgent", "createdAt")
