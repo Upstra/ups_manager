@@ -1,7 +1,10 @@
 from redis import Redis
+from dotenv import load_dotenv
 from os import environ as env
 
 from data_retriever.cache_element import deserialize_element, VCenterElement, deserialize_vcenter, VMwareElement
+
+load_dotenv()
 
 VCENTER = "metrics:vcenter"
 ELEMENTS = "metrics:elements"

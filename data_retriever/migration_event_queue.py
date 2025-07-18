@@ -1,11 +1,14 @@
 from uuid import uuid4
-from os import environ as env, remove as remove_file
-from os.path import exists as path_exists
 from enum import Enum
 from psycopg2 import connect as postgres
+from dotenv import load_dotenv
+from os import environ as env, remove as remove_file
+from os.path import exists as path_exists
 
 from data_retriever.migration_event import deserialize_event, serialize_event, VMShutdownEvent, serialize_event_type, \
     MigrationErrorEvent
+
+load_dotenv()
 
 SAVED_MIGRATION_ID = "plans/migration_id"
 

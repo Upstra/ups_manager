@@ -1,8 +1,10 @@
 from base64 import b64decode
 from Crypto.Cipher import AES
 from Crypto.Protocol.KDF import scrypt
+from dotenv import load_dotenv
 from os import environ as env
 
+load_dotenv()
 
 class DecryptionException(Exception):
     def __init__(self, message):
