@@ -55,7 +55,11 @@ class Cache:
             CacheException: If an error occured while getting vCenter element
         """
         try:
-            return deserialize_vcenter(self._redis.get(VCENTER))
+            vcenter = self._redis.get(VCENTER)
+            if vcenter:
+                return deserialize_vcenter(vcenter)
+            else:
+                raise CacheException(f"vCenter wasn't found in Redis")
         except Exception as e:
             raise CacheException(f"Failed to get vCenter from Redis: {e}") from e
 
