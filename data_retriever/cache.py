@@ -1,10 +1,7 @@
 from redis import Redis
-from dotenv import load_dotenv
-from os import environ as env
 
 from data_retriever.cache_element import deserialize_element, VCenterElement, deserialize_vcenter, VMwareElement
 
-load_dotenv()
 
 VCENTER = "metrics:vcenter"
 ELEMENTS = "metrics:elements"
@@ -17,18 +14,7 @@ class CacheException(Exception):
 class Cache:
     def __init__(self):
         try:
-            host = env.get('REDIS_HOST')
-            port = env.get('REDIS_PORT')
-            password = env.get('REDIS_PASSWORD')
-            username = env.get('REDIS_USERNAME')
-
-            self._redis = Redis(
-                host=host,
-                port=port,
-                password=password,
-                username=username,
-                decode_responses=True
-            )
+            self._redis = Redis()
             self._redis.ping()
         except Exception as e:
             raise CacheException(f"Failed to connect to Redis: {e}") from e
