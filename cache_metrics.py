@@ -15,13 +15,17 @@ if __name__ == "__main__":
     metrics = None
 
     try:
+        print("before cache")
         cache = Cache()
+        print("after cache")
         vcenter = cache.get_vcenter()
+        print("get vcenter")
         while not vcenter:
             sleep(RELOAD_DELAY)
             vcenter = cache.get_vcenter()
-
+        print("after while")
         conn.connect(vcenter.ip, vcenter.user, vcenter.password, vcenter.port)
+        print("after connection")
         while True:
             elements = cache.get_elements()
             for element in elements:
