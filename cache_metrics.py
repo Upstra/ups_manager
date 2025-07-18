@@ -17,9 +17,9 @@ if __name__ == "__main__":
     try:
         cache = Cache()
         vcenter = cache.get_vcenter()
-        if vcenter is None:
-            print("No vCenter were found")
-            exit(1)
+        while not vcenter:
+            sleep(RELOAD_DELAY)
+            vcenter = cache.get_vcenter()
 
         conn.connect(vcenter.ip, vcenter.user, vcenter.password, vcenter.port)
         while True:

@@ -58,7 +58,7 @@ def load_plan_from_yaml(file_path: str) -> tuple[VCenter, UpsGrace, Servers]:
     vcenter = VCenter(
         ip=data['vCenter']['ip'],
         user=data['vCenter']['user'],
-        password=data['vCenter']['password'], # decrypt(data['vCenter']['password']),
+        password=decrypt(data['vCenter']['password']),
         port=data['vCenter']['port'] if 'port' in data['vCenter'] else 443,
     )
 
@@ -78,7 +78,7 @@ def load_plan_from_yaml(file_path: str) -> tuple[VCenter, UpsGrace, Servers]:
                 ilo=IloYaml(
                     ip=host['ilo']['ip'],
                     user=host['ilo']['user'],
-                    password=host['ilo']['password'],# decrypt(host['ilo']['password']),
+                    password=decrypt(host['ilo']['password']),
                 )
             ),
             destination=Host(
@@ -87,7 +87,7 @@ def load_plan_from_yaml(file_path: str) -> tuple[VCenter, UpsGrace, Servers]:
                 ilo=IloYaml(
                     ip=destination['ilo']['ip'],
                     user=destination['ilo']['user'],
-                    password=destination['ilo']['password'], # decrypt(destination['ilo']['password']),
+                    password=decrypt(destination['ilo']['password']),
                 )
             ) if destination else None,
             vm_order=[vm['vmMoId'] for vm in server['server']['vmOrder']],
