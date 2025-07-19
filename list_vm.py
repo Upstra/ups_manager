@@ -25,7 +25,7 @@ def list_vm(ip: str, user: str, password: str, port: int) -> dict:
 
     except vim.fault.InvalidLogin as _:
         return result_message("Invalid credentials", 401)
-    except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState, vim.fault.HostNotConnected, OSError, socket.gaierror):
+    except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState, OSError, socket.gaierror):
         return result_message("Host is unreachable", 404)
     except (vim.fault.VimFault, vmodl.MethodFault):
         return result_message("Can't list VMs", 403)

@@ -26,7 +26,7 @@ def vm_stop(vm: vim.VirtualMachine, name: str) -> dict:
         WaitForTask(task)
         return result_message(f"VM '{name}' has been successfully stopped", 200)
 
-    except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState, vim.fault.HostNotConnected, OSError, socket.gaierror):
+    except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState, OSError, socket.gaierror):
         return result_message("Host is unreachable", 404)
     except vim.fault.TaskInProgress:
         return result_message(f"VM '{name}' is busy", 403)
