@@ -46,12 +46,12 @@ class ActionType(str, Enum):
     MIGRATION_ERROR = "MIGRATION_ERROR"
 
 EVENT_CLASSES = {
-    str(ActionType.VM_STARTED): VMStartedEvent,
-    str(ActionType.VM_MIGRATED): VMMigrationEvent,
-    str(ActionType.VM_STOPPED): VMShutdownEvent,
-    str(ActionType.SERVER_STARTED): ServerStartedEvent,
-    str(ActionType.SERVER_STOPPED): ServerShutdownEvent,
-    str(ActionType.MIGRATION_ERROR): MigrationErrorEvent,
+    ActionType.VM_STARTED.value: VMStartedEvent,
+    ActionType.VM_MIGRATED.value: VMMigrationEvent,
+    ActionType.VM_STOPPED.value: VMShutdownEvent,
+    ActionType.SERVER_STARTED.value: ServerStartedEvent,
+    ActionType.SERVER_STOPPED.value: ServerShutdownEvent,
+    ActionType.MIGRATION_ERROR.value: MigrationErrorEvent,
 }
 
 def serialize_event_type(event) -> str:
