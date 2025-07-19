@@ -94,10 +94,11 @@ class EventQueue:
                 INSERT INTO "history_event" (
                     "entity", "entityId", "action", "metadata", "userAgent", "createdAt"
                 ) VALUES (
-                    'migration', %s, %s, %s, 'UPSTRA', datetime.now()
+                    'migration', %s, %s, %s, 'UPSTRA', %s
                 );
-                """, (migration_id, serialize_event_type(event), serialize_event(event))
+                """, (migration_id, serialize_event_type(event), serialize_event(event), datetime.now())
             )
+            self._conn.commit()
         except Exception as e:
             EventQueueException(f"Failed to push event to Redis: {e}")
 
