@@ -29,7 +29,6 @@ def restart(vcenter: VCenter, ups_grace: UpsGrace):
         events = event_queue.get_event_list()
 
         for event in events:
-            print(type(event))
             if isinstance(event, VMShutdownEvent):
                 vm = conn.get_vm(event.vm_moid)
                 target_host = conn.get_host_system(event.server_moid)
@@ -64,15 +63,11 @@ def restart(vcenter: VCenter, ups_grace: UpsGrace):
                     event = MigrationErrorEvent("VM won't stop", start_result['result']['message'])
                 event_queue.push(event, True)
             elif isinstance(event, ServerShutdownEvent):
-                print(f"{event.ilo_ip}, {event.ilo_user}, {event.ilo_password}")
                 start_result = server_start(event.ilo_ip, event.ilo_user, event.ilo_password)
                 if start_result['result']['httpCode'] == 200:
                     event = ServerStartedEvent(event.server_moid)
-                    print("Successfully started server")
                 else:
                     event = MigrationErrorEvent("Server won't start", start_result['result']['message'])
-                    print("Failed to start server")
-                print(event)
                 event_queue.push(event, True)
             else:
                 event = MigrationErrorEvent("Unsupported event", f"Unknown event type: {event}")

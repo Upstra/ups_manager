@@ -98,6 +98,7 @@ class EventQueue:
                 );
                 """, (migration_id, serialize_event_type(event), serialize_event(event), datetime.now())
             )
+            self._conn.commit()
         except Exception as e:
             raise EventQueueException(f"Failed to push event to Redis: {e}")
 
