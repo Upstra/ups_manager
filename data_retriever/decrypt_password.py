@@ -1,6 +1,7 @@
-from base64 import b64decode
+from base64 import b64decode, b64encode
 from Crypto.Cipher import AES
 from Crypto.Protocol.KDF import scrypt
+from Crypto.Random import get_random_bytes
 from dotenv import load_dotenv
 from os import environ as env
 
@@ -37,3 +38,23 @@ def decrypt(encrypted_base64: str) -> str:
         return decrypted.decode('utf-8')
     except Exception as e:
         raise DecryptionException(e)
+
+def encrypt(plaintext: str) -> str:
+    """
+    Encrypt a plaintext password and return a base64-encoded string
+    Returns:
+        str: base64-encoded encrypted password
+    """
+    secret_key = env.get('ENCRYPTION_KEY')
+    if not secret_key:
+        raise ValueError("ENCRYPTION_KEY must be set in the environment.")
+
+    key = scrypt(secret_key, 'salt', 32, N=16384, r=8, p=1)
+    iv = get_random_bytes(16)
+
+    cipher = AES.new(key, AES.MODE_GCM, nonce=iv)
+    cipher.update(b'')
+
+    ciphertext, auth_tag = cipher.encrypt_and_digest(plaintext.encode('utf-8'))
+    encrypted_data = iv + auth_tag + ciphertext
+    return b64encode(encrypted_data).decode('utf-8')

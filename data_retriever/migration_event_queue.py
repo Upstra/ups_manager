@@ -4,6 +4,7 @@ from psycopg2 import connect as postgres
 from dotenv import load_dotenv
 from os import environ as env, remove as remove_file
 from os.path import exists as path_exists
+from datetime import datetime
 
 from data_retriever.migration_event import deserialize_event, serialize_event, VMShutdownEvent, serialize_event_type, \
     MigrationErrorEvent
@@ -87,13 +88,13 @@ class EventQueue:
         elif is_rollback:
             migration_id = f"rollback_{self._migration_id}"
         else:
-            migration_id = f"rollback_{self._migration_id}"
+            migration_id = f"migration_{self._migration_id}"
         try:
             self._cursor.execute("""
                 INSERT INTO "history_event" (
                     "entity", "entityId", "action", "metadata", "userAgent", "createdAt"
                 ) VALUES (
-                    'migration', %s, %s, %s, 'UPSTRA', NOW()
+                    'migration', %s, %s, %s, 'UPSTRA', datetime.now()
                 );
                 """, (migration_id, serialize_event_type(event), serialize_event(event))
             )
@@ -117,7 +118,7 @@ class EventQueue:
         migration_id = "migration_" + self._migration_id
         try:
             self._cursor.execute("""
-                SELECT "action", "metadata" FROM "history_event" WHERE "entityId"=%s ORDER BY "createdAt"
+                SELECT "action", "metadata" FROM "history_event" WHERE "entityId"=%s ORDER BY "createdAt" DESC
             """, (migration_id,))
             rows = self._cursor.fetchall()
             for row in rows:

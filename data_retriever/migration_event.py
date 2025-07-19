@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from enum import Enum
 from json import dumps as json_dumps, loads as json_loads
 
+from data_retriever.decrypt_password import encrypt, decrypt
+
 
 @dataclass
 class VMMigrationEvent:
@@ -84,6 +86,8 @@ def serialize_event(event) -> str:
     Returns:
         str: Json formatted string representation of an Event
     """
+    if isinstance(event, ServerShutdownEvent):
+        event.ilo_password = encrypt(event.ilo_password)
     return json_dumps(event.__dict__)
 
 def deserialize_event(event_type: str, event_json: str):
@@ -106,6 +110,9 @@ def deserialize_event(event_type: str, event_json: str):
 
     cls = EVENT_CLASSES[event_type]
     try:
-        return cls(**obj["data"])
+        event = cls(**obj["data"])
+        if event_type == str(ActionType.SERVER_STOPPED):
+            event.ilo_password = decrypt(event.ilo_password)
+        return event
     except TypeError as e:
         raise ValueError(f"Invalid event data for {event_type}: {e}") from e
