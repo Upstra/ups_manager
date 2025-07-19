@@ -8,3 +8,5 @@ __pycache__/
 plans/migration.yml
 
 logs/*.log
+
+.env

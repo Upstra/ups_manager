@@ -1,7 +1,7 @@
 vCenter:
   ip: 172.1.2.3
   user: vCenterUser
-  password: vCenterPassword
+  password: vcenter_crypted_password
   port: 443
 
 ups:
@@ -16,14 +16,14 @@ servers:
         ilo:
           ip: 172.2.3.4
           user: user
-          password: password
+          password: crypted_password
       destination:
         name: dist_name
         moid: srv2_moid
         ilo:
           ip: 172.2.3.4
           user: user
-          password: password
+          password: crypted_password
       vmOrder:
         - vmMoId: vm1
         - vmMoId: vm2

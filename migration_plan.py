@@ -1,8 +1,9 @@
 from time import sleep
 from pyVmomi import vim
 
-from data_retriever.event_queue import EventQueue
-from data_retriever.migration_event import VMMigrationEvent, VMShutdownEvent, ServerShutdownEvent, VMStartedEvent
+from data_retriever.migration_event_queue import EventQueue, EventQueueException
+from data_retriever.migration_event import VMMigrationEvent, VMShutdownEvent, ServerShutdownEvent, VMStartedEvent, \
+    MigrationErrorEvent
 from data_retriever.vm_ware_connection import VMwareConnection
 from data_retriever.yaml_parser import Server, VCenter, Servers, load_plan_from_yaml, UpsGrace
 from server_start import server_start
@@ -22,101 +23,106 @@ def get_distant_host(conn: VMwareConnection, server: Server) -> vim.HostSystem:
         vim.HostSystem: The `HostSystem` object representing the distant server, or None if the server is unavailable
     """
     if not server.destination:
-        print(f"Distant server not set")
+        # print(f"Distant server not set")
         return None
 
     dist_host = conn.get_host_system(server.destination.moid)
     if not dist_host:
-        print(f"Distant server '{server.destination.name}' ({server.destination.moid}) not found")
+        # print(f"Distant server '{server.destination.name}' ({server.destination.moid}) not found")
         return None
 
     if dist_host.runtime.powerState == vim.HostSystem.PowerState.poweredOff:
         start_result = server_start(server.destination.ilo.ip, server.destination.ilo.user, server.destination.ilo.password)
         if start_result['result']['httpCode'] != 200:
-            print(f"Distant server '{server.destination.name}' ({server.destination.moid}) is off and won't turn on : {start_result['result']['message']}")
+            # print(f"Distant server '{server.destination.name}' ({server.destination.moid}) is off and won't turn on : {start_result['result']['message']}")
             return None
 
     return dist_host
 
 
-def shutdown(v_center: VCenter, ups_grace: UpsGrace, servers: Servers):
+def shutdown(vcenter: VCenter, ups_grace: UpsGrace, servers: Servers):
     """
     Launch the shutdown plan of all servers specified in `servers
     Args:
-        v_center (VCenter): The vCenter that orchestrates the migration plan
+        vcenter (VCenter): The vCenter that orchestrates the migration plan
         ups_grace (UpsGrace): The `UpsGrace` object containing graces periods to wait before shutdown and restart
         servers (Servers): The migration plan for each server
     """
     stop_delay = ups_grace.shutdown_grace
     conn = VMwareConnection()
+    event_queue = EventQueue()
     try:
-        event_queue = EventQueue()
+        event_queue.connect()
         event_queue.grace_shutdown()
-        print(f"Waiting {stop_delay} seconds for power to come back...")
         sleep(stop_delay)
 
         event_queue.start_shutdown()
-        conn.connect(v_center.ip, v_center.user, v_center.password, v_center.port)
+        conn.connect(vcenter.ip, vcenter.user, vcenter.password, vcenter.port)
         for server in servers.servers:
             vms = server.vm_order
             current_host = conn.get_host_system(server.host.moid)
             if not current_host:
-                print(f"Server '{server.host.name}' ({server.host.moid}) not found")
+                event = MigrationErrorEvent("Server not found", f"Server '{server.host.name}' with moId {server.host.moid} not found")
+                event_queue.push(event)
                 continue
             if current_host.runtime.powerState == vim.HostSystem.PowerState.poweredOff:
-                print(f"Server '{server.host.name}' ({server.host.moid}) is already off")
+                event = MigrationErrorEvent("Server off", f"Server '{server.host.name}' with moId {server.host.moid} is already off")
+                event_queue.push(event)
                 continue
 
             dist_host = get_distant_host(conn, server)
-            if dist_host:
-                print(f"Launching migration plan for server '{server.host.name}' ({server.host.moid})...")
-            else:
-                print(f"Launching shutdown plan for server '{server.host.name}' ({server.host.moid})...")
-
             for vm_moid in vms:
                 vm = conn.get_vm(vm_moid)
                 stop_result = vm_stop(vm, vm_moid)
-                print(stop_result['result']['message'])
                 if stop_result['result']['httpCode'] == 200:
                     event = VMShutdownEvent(vm_moid, server.host.moid)
-                    event_queue.push(event)
+                else:
+                    event = MigrationErrorEvent("VM won't stop", stop_result['result']['message'])
+                event_queue.push(event)
                 if not dist_host:
                     continue
 
                 stop_result = vm_migration(vm, vm_moid, dist_host, server.destination.moid)
-                print(stop_result['result']['message'])
                 if stop_result['result']['httpCode'] == 200:
                     event = VMMigrationEvent(vm_moid, server.host.moid)
                     event_queue.push(event)
                     stop_result = vm_start(vm, vm_moid)
-                    print(stop_result['result']['message'])
                     if stop_result['result']['httpCode'] == 200:
                         event = VMStartedEvent(vm_moid, server.host.moid)
-                        event_queue.push(event)
+                    else:
+                        event = MigrationErrorEvent("VM won't start", stop_result['result']['message'])
+                    event_queue.push(event)
+                else:
+                    event = MigrationErrorEvent("VM won't migrate", stop_result['result']['message'])
+                    event_queue.push(event)
 
-            print(f"Stopping server '{server.host.name}' ({server.host.moid})...")
             stop_result = server_stop(server.host.ilo.ip, server.host.ilo.user, server.host.ilo.password)
             if stop_result['result']['httpCode'] == 200:
-                print(f"Server '{server.host.name}' ({server.host.moid}) is fully migrated")
                 event = ServerShutdownEvent(server.host.moid, server.host.ilo.ip, server.host.ilo.user, server.host.ilo.password)
-                event_queue.push(event)
             else:
-                print(f"Couldn't stop server '{server.host.name}' ({server.host.moid})")
+                event = MigrationErrorEvent("Server won't stop", stop_result['result']['message'])
+            event_queue.push(event)
         event_queue.finish_shutdown()
-    except ConnectionError as err:
-        print(err)
-    except vim.fault.InvalidLogin as _:
-        print("Invalid credentials")
-    except Exception as err:
-        print(err)
+
+    except EventQueueException as e:
+        event = MigrationErrorEvent("Database error", str(e))
+        event_queue.push(event)
+    except vim.fault.InvalidLogin:
+        event = MigrationErrorEvent("Invalid credentials", "Username or password is incorrect")
+        event_queue.push(event)
+    except Exception as e:
+        event = MigrationErrorEvent("Unknown error", str(e))
+        event_queue.push(event)
     finally:
+        event_queue.disconnect()
         conn.disconnect()
-        print("Finished migration plan")
 
 
 if __name__ == "__main__":
+    vcenter, ups_grace, servers = None, None, None
     try:
-        v_center, ups_grace, servers = load_plan_from_yaml("plans/migration.yml")
-        shutdown(v_center, ups_grace, servers)
-    except Exception as err:
-        print(f"Error parsing YAML file: {err}")
+        vcenter, ups_grace, servers = load_plan_from_yaml("plans/migration.yml")
+    except Exception as e:
+        print(f"Error parsing YAML file: {e}")
+    if vcenter and ups_grace and servers:
+        shutdown(vcenter, ups_grace, servers)

@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from pyVmomi import vim
 from pyVim.task import WaitForTask
+import socket
 
 from data_retriever.dto import result_message, output
 from data_retriever.vm_ware_connection import VMwareConnection
@@ -40,8 +41,12 @@ def vm_migration(vm: vim.VirtualMachine, vm_name: str, target_host: vim.HostSyst
         WaitForTask(task)
         return result_message(f"VM '{vm_name}' migrated successfully", 200)
 
-    except vim.fault.InvalidHostState as _:
+    except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState, OSError, socket.error):
         return result_message("Host is unreachable", 404)
+    except vim.fault.TaskInProgress:
+        return result_message(f"VM '{vm_name}' is busy", 403)
+    except (vim.fault.InvalidPowerState, vim.fault.VimFault):
+        return result_message(f"VM '{vm_name}' can't be migrated", 403)
     except Exception as err:
         return result_message(str(err), 400)
 
@@ -76,7 +81,7 @@ def complete_vm_migration(vm_moid: str, dist_moid: str,  ip: str, user: str, pas
             return result
         return result_message(f"VM '{vm_moid}' migrated successfully", 200)
 
-    except vim.fault.InvalidLogin as _:
+    except vim.fault.InvalidLogin:
         return result_message("Invalid credentials", 401)
     except Exception as err:
         return result_message(str(err), 400)

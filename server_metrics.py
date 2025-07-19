@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from pyVmomi import vim
+import socket
 
 from data_retriever.dto import result_message, server_metrics_info, output
 from data_retriever.vm_ware_connection import VMwareConnection
@@ -26,8 +27,12 @@ def server_metrics(moid: str, ip: str, user: str, password: str, port: int) -> d
 
         return server_metrics_info(host)
 
-    except vim.fault.InvalidLogin as _:
+    except vim.fault.InvalidLogin:
         return result_message("Invalid credentials", 401)
+    except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState, OSError, socket.error):
+        return result_message("Host is unreachable", 404)
+    except vim.fault.VimFault:
+        return result_message(f"Can't get metrics from Server '{moid}'", 403)
     except Exception as err:
         return result_message(str(err), 400)
     finally:
