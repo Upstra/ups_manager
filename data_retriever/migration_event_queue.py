@@ -113,8 +113,8 @@ class EventQueue:
             raise EventQueueException(f"Postgres connection not established")
         if self._migration_id == "":
             self._generate_migration_id()
-            if self._migration_id != "":
-                EventQueueException("No migration has been started")
+            if self._migration_id == "":
+                raise EventQueueException("No migration has been started")
         migration_id = "migration_" + self._migration_id
         try:
             self._cursor.execute("""
@@ -123,7 +123,7 @@ class EventQueue:
             rows = self._cursor.fetchall()
             return [deserialize_event(row[0], row[1]) for row in rows]
         except Exception as e:
-            EventQueueException(f"Failed to get events from Redis: {e}")
+            raise EventQueueException(f"Failed to get events from Redis: {e}")
 
     def _generate_migration_id(self):
         """ Generate migration id to save current migration events """
