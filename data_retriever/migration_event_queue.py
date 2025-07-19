@@ -122,9 +122,7 @@ class EventQueue:
                 SELECT "action", "metadata" FROM "history_event" WHERE "entityId"=%s ORDER BY "createdAt" DESC
             """, (migration_id,))
             rows = self._cursor.fetchall()
-            for row in rows:
-                print(row)
-            return [deserialize_event(row['action'], row['metadata']) for row in rows]
+            return [deserialize_event(row[0], row[1]) for row in rows]
         except Exception as e:
             EventQueueException(f"Failed to get events from Redis: {e}")
 
