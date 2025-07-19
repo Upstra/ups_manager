@@ -143,7 +143,10 @@ def server_metrics_info(host: vim.HostSystem) -> dict:
     Returns:
        dict: A dictionary formatted for json dump containing the metrics data
     """
-    cpu_usage = (host.summary.quickStats.overallCpuUsage / ((host.hardware.cpuInfo.hz / 1000000) * host.hardware.cpuInfo.numCpuCores)) * 100
+    if host.summary.quickStats.overallCpuUsage and host.hardware:
+        cpu_usage = (host.summary.quickStats.overallCpuUsage / ((host.hardware.cpuInfo.hz / 1000000) * host.hardware.cpuInfo.numCpuCores)) * 100
+    else:
+        cpu_usage = 0
     return {
         "powerState": host.runtime.powerState,
         "overallStatus": host.overallStatus,

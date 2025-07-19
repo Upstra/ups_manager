@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from pyVmomi import vim
 from pyVim.task import WaitForTask
+import socket
 
 from data_retriever.dto import result_message, output
 from data_retriever.vm_ware_connection import VMwareConnection
@@ -25,6 +26,12 @@ def vm_stop(vm: vim.VirtualMachine, name: str) -> dict:
         WaitForTask(task)
         return result_message(f"VM '{name}' has been successfully stopped", 200)
 
+    except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState, OSError, socket.error):
+        return result_message("Host is unreachable", 404)
+    except vim.fault.TaskInProgress:
+        return result_message(f"VM '{name}' is busy", 403)
+    except (vim.fault.InvalidPowerState, vim.fault.VimFault):
+        return result_message(f"VM '{name}' can't be stopped", 403)
     except Exception as err:
         return result_message(str(err), 400)
 
@@ -48,7 +55,7 @@ def complete_vm_stop(moid: str, ip: str, user: str, password: str, port: int) ->
 
         return vm_stop(vm, moid)
 
-    except vim.fault.InvalidLogin as _:
+    except vim.fault.InvalidLogin:
         return result_message("Invalid credentials", 401)
     except Exception as err:
         return result_message(str(err), 400)

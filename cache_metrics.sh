@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: ./vm_migration.sh --vm_moid <VMMOID> --dist_moid <DISTMOID> --ip <IP> --user <USER> --password <PASS> [--port <PORT>]
+# Usage: ./cache_metrics.sh
 
 if [ ! -f .venv/bin/activate ]; then
     echo "ERROR: Virtual environment not found at .venv/bin/activate"
@@ -15,4 +15,4 @@ if [[ "$VIRTUAL_ENV" != "$(pwd)/.venv"* ]]; then
     exit 1
 fi
 
-python vm_migration.py "$@"
+python cache_metrics.py &
