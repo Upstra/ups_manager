@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from pyVmomi import vim
+import socket
 
 from data_retriever.dto import result_message, vms_list_info, output
 from data_retriever.vm_ware_connection import VMwareConnection
@@ -24,7 +25,7 @@ def list_vm(ip: str, user: str, password: str, port: int) -> dict:
 
     except vim.fault.InvalidLogin:
         return result_message("Invalid credentials", 401)
-    except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState):
+    except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState, OSError, socket.error):
         return result_message("Host is unreachable", 404)
     except vim.fault.VimFault:
         return result_message("Can't list VMs", 403)

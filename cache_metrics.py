@@ -2,6 +2,7 @@ from time import sleep
 from pyVmomi import vim
 from json import dumps as json_dumps
 import logging
+import socket
 
 from data_retriever.cache import Cache, CacheException
 from data_retriever.cache_element import serialize_server, serialize_vm
@@ -53,7 +54,7 @@ if __name__ == "__main__":
         except vim.fault.InvalidLogin:
             sleep(RELOAD_DELAY)
             logging.error("Invalid credentials")
-        except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState):
+        except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState, OSError, socket.error):
             sleep(RELOAD_DELAY)
             logging.error("Host is unreachable")
         except vim.fault.VimFault:
