@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from pyVmomi import vim, vmodl
 from pyVim.task import WaitForTask
+import socket
 
 from data_retriever.dto import result_message, output
 from data_retriever.vm_ware_connection import VMwareConnection
@@ -25,7 +26,7 @@ def vm_stop(vm: vim.VirtualMachine, name: str) -> dict:
         WaitForTask(task)
         return result_message(f"VM '{name}' has been successfully stopped", 200)
 
-    except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState, vim.fault.HostNotConnected, vmodl.fault.HostCommunication):
+    except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState, vim.fault.HostNotConnected, OSError, socket.gaierror):
         return result_message("Host is unreachable", 404)
     except vim.fault.TaskInProgress:
         return result_message(f"VM '{name}' is busy", 403)
