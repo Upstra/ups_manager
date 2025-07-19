@@ -1,5 +1,4 @@
 from argparse import ArgumentParser
-import socket
 from pyVmomi import vim
 from pyVim.task import WaitForTask
 
@@ -26,7 +25,7 @@ def vm_start(vm: vim.VirtualMachine, name: str) -> dict:
         WaitForTask(task)
         return result_message(f"VM '{name}' has been successfully started", 200)
 
-    except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState, OSError, socket.gaierror):
+    except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState):
         return result_message("Host is unreachable", 404)
     except vim.fault.TaskInProgress:
         return result_message(f"VM '{name}' is busy", 403)

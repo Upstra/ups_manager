@@ -1,5 +1,4 @@
 from argparse import ArgumentParser
-import socket
 from pyVmomi import vim
 from pyVim.task import WaitForTask
 
@@ -41,7 +40,7 @@ def vm_migration(vm: vim.VirtualMachine, vm_name: str, target_host: vim.HostSyst
         WaitForTask(task)
         return result_message(f"VM '{vm_name}' migrated successfully", 200)
 
-    except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState, OSError, socket.gaierror):
+    except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState):
         return result_message("Host is unreachable", 404)
     except vim.fault.TaskInProgress:
         return result_message(f"VM '{vm_name}' is busy", 403)
