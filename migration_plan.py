@@ -107,7 +107,7 @@ def shutdown(vcenter: VCenter, ups_grace: UpsGrace, servers: Servers):
     except EventQueueException as e:
         event = MigrationErrorEvent("Database error", str(e))
         event_queue.push(event)
-    except vim.fault.InvalidLogin as _:
+    except vim.fault.InvalidLogin:
         event = MigrationErrorEvent("Invalid credentials", "Username or password is incorrect")
         event_queue.push(event)
     except Exception as e:

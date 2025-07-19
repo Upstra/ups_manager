@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from pyVmomi import vim, vmodl
+from pyVmomi import vim
 from pyVim.task import WaitForTask
 import socket
 
@@ -30,7 +30,7 @@ def vm_stop(vm: vim.VirtualMachine, name: str) -> dict:
         return result_message("Host is unreachable", 404)
     except vim.fault.TaskInProgress:
         return result_message(f"VM '{name}' is busy", 403)
-    except (vim.fault.InvalidPowerState, vim.fault.VimFault, vmodl.MethodFault):
+    except (vim.fault.InvalidPowerState, vim.fault.VimFault):
         return result_message(f"VM '{name}' can't be stopped", 403)
     except Exception as err:
         return result_message(str(err), 400)
@@ -55,7 +55,7 @@ def complete_vm_stop(moid: str, ip: str, user: str, password: str, port: int) ->
 
         return vm_stop(vm, moid)
 
-    except vim.fault.InvalidLogin as _:
+    except vim.fault.InvalidLogin:
         return result_message("Invalid credentials", 401)
     except Exception as err:
         return result_message(str(err), 400)

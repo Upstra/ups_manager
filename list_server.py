@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from pyVmomi import vim, vmodl
+from pyVmomi import vim
 import socket
 
 from data_retriever.dto import result_message, output, servers_list_info
@@ -23,11 +23,11 @@ def list_server(ip: str, user: str, password: str, port: int) -> dict:
         hosts = conn.get_all_hosts()
         return servers_list_info(hosts)
 
-    except vim.fault.InvalidLogin as _:
+    except vim.fault.InvalidLogin:
         return result_message("Invalid credentials", 401)
     except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState, OSError, socket.gaierror):
         return result_message("Host is unreachable", 404)
-    except (vim.fault.VimFault, vmodl.MethodFault):
+    except vim.fault.VimFault:
         return result_message("Can't list Servers", 403)
     except Exception as err:
         return result_message(str(err), 400)
