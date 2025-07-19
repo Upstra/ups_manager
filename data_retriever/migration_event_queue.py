@@ -82,7 +82,7 @@ class EventQueue:
         if self._migration_id == "":
             self._generate_migration_id()
             if self._migration_id != "":
-                EventQueueException("No migration has been started")
+                raise EventQueueException("No migration has been started")
         if isinstance(event, MigrationErrorEvent):
             migration_id = f"error_{self._migration_id}"
         elif is_rollback:
@@ -99,7 +99,7 @@ class EventQueue:
                 """, (migration_id, serialize_event_type(event), serialize_event(event), datetime.now())
             )
         except Exception as e:
-            EventQueueException(f"Failed to push event to Redis: {e}")
+            raise EventQueueException(f"Failed to push event to Redis: {e}")
 
     def get_event_list(self):
         """
@@ -158,7 +158,7 @@ class EventQueue:
             """, (status,))
             self._conn.commit()
         except Exception as e:
-            EventQueueException(f"Failed to push {status} status to Postgres: {e}")
+            raise EventQueueException(f"Failed to push {status} status to Postgres: {e}")
 
     def grace_shutdown(self):
         """
