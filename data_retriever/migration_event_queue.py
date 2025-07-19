@@ -199,5 +199,5 @@ class EventQueue:
         Raises:
             EventQueueException: If status END_ROLLBACK could not be sent
         """
-        self._send_status(MigrationStatus.START_ROLLBACK)
+        self._send_status(MigrationStatus.END_ROLLBACK)
         self._delete_migration_id()
