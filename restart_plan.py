@@ -73,6 +73,7 @@ def restart(vcenter: VCenter, ups_grace: UpsGrace):
                 event = MigrationErrorEvent("Unsupported event", f"Unknown event type: {event}")
                 event_queue.push(event, True)
                 continue
+        event_queue.finish_restart()
 
     except EventQueueException as e:
         event = MigrationErrorEvent("Database error", str(e))
@@ -84,7 +85,6 @@ def restart(vcenter: VCenter, ups_grace: UpsGrace):
         event = MigrationErrorEvent("Unknown error", str(e))
         event_queue.push(event)
     finally:
-        event_queue.finish_restart()
         event_queue.disconnect()
         conn.disconnect()
 

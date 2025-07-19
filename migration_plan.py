@@ -102,6 +102,7 @@ def shutdown(vcenter: VCenter, ups_grace: UpsGrace, servers: Servers):
             else:
                 event = MigrationErrorEvent("Server won't stop", stop_result['result']['message'])
             event_queue.push(event)
+        event_queue.finish_shutdown()
 
     except EventQueueException as e:
         event = MigrationErrorEvent("Database error", str(e))
@@ -113,7 +114,6 @@ def shutdown(vcenter: VCenter, ups_grace: UpsGrace, servers: Servers):
         event = MigrationErrorEvent("Unknown error", str(e))
         event_queue.push(event)
     finally:
-        event_queue.finish_shutdown()
         event_queue.disconnect()
         conn.disconnect()
 

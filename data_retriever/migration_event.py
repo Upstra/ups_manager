@@ -106,7 +106,7 @@ def deserialize_event(event_type: str, event_json: dict):
 
     cls = EVENT_CLASSES[event_type]
     try:
-        event = cls(**event_json["data"])
+        event = cls(**event_json)
         if event_type == str(ActionType.SERVER_STOPPED):
             event.ilo_password = decrypt(event.ilo_password)
         return event
