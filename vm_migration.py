@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from pyVmomi import vim
+from pyVmomi import vim, vmodl
 from pyVim.task import WaitForTask
 
 from data_retriever.dto import result_message, output
@@ -40,7 +40,8 @@ def vm_migration(vm: vim.VirtualMachine, vm_name: str, target_host: vim.HostSyst
         WaitForTask(task)
         return result_message(f"VM '{vm_name}' migrated successfully", 200)
 
-    except vim.fault.InvalidHostState as _:
+
+    except (vim.fault.NoCompatibleHost, vim.fault.InvalidHostState, vim.fault.HostNotConnected, vmodl.fault.HostCommunication):
         return result_message("Host is unreachable", 404)
     except Exception as err:
         return result_message(str(err), 400)
