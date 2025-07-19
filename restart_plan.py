@@ -29,6 +29,7 @@ def restart(vcenter: VCenter, ups_grace: UpsGrace):
         events = event_queue.get_event_list()
 
         for event in events:
+            print(type(event))
             if isinstance(event, VMShutdownEvent):
                 vm = conn.get_vm(event.vm_moid)
                 target_host = conn.get_host_system(event.server_moid)
