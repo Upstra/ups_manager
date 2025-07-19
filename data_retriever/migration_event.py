@@ -90,12 +90,12 @@ def serialize_event(event) -> str:
         event.ilo_password = encrypt(event.ilo_password)
     return json_dumps(event.__dict__)
 
-def deserialize_event(event_type: str, event_json: str):
+def deserialize_event(event_type: str, event_json: dict):
     """
     Deserialize a JSON string into an Event object
     Args:
         event_type (str): The type of event to deserialize
-        event_json: (str): Json formatted string representation of an Event
+        event_json: (dict): Json formatted dictionary representation of an Event
     Returns:
         VMStartedEvent | VMMigrationEvent | VMShutdownEvent | ServerStartedEvent | ServerShutdownEvent | MigrationErrorEvent: The deserialized event
     Raises:
@@ -103,14 +103,10 @@ def deserialize_event(event_type: str, event_json: str):
     """
     if event_type not in EVENT_CLASSES:
         raise ValueError(f"Unknown event type: {event_type}")
-    try:
-        obj = json_loads(event_json)
-    except Exception as e:
-        raise ValueError(f"Invalid JSON format: {e}") from e
 
     cls = EVENT_CLASSES[event_type]
     try:
-        event = cls(**obj["data"])
+        event = cls(**event_json["data"])
         if event_type == str(ActionType.SERVER_STOPPED):
             event.ilo_password = decrypt(event.ilo_password)
         return event
