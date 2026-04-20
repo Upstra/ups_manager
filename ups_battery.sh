@@ -17,5 +17,11 @@ if [[ -z "$IP" ]]; then
     exit 1
 fi
 
-VALUE=$(/bin/snmpget -O T -m ALL -c public -v1 "$IP" UPS-MIB::upsEstimatedMinutesRemaining.0 | awk -F': ' '{print $2}' | awk '{print $1}')
-echo "$VALUE"
+if [[ "$IP" == http://* ]] || [[ "$IP" == https://* ]]; then
+    # Mode démo : endpoint HTTP mock_ups — runtime_remaining en secondes, converti en minutes
+    curl -sf "${IP}/battery" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['runtime_remaining']//60)"
+else
+    # Mode production : UPS réel via SNMP v1
+    VALUE=$(/bin/snmpget -O T -m ALL -c public -v1 "$IP" UPS-MIB::upsEstimatedMinutesRemaining.0 | awk -F': ' '{print $2}' | awk '{print $1}')
+    echo "$VALUE"
+fi
