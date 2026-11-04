@@ -42,7 +42,9 @@ Each `.sh` script activates the venv and delegates to the matching `.py` file.
 ./list_server.sh    --ip <vcenter_ip> --user <u> --password <p>
 
 # UPS
-./ups_battery.sh    # SNMP query for remaining battery time
+./ups_battery.sh --ip <ip>                      # remaining minutes (legacy output)
+./ups_battery.sh --ip <ip> --format json        # full telemetry JSON (SNMP, NUT via --source nut, or HTTP mock)
+python3 -m unittest discover -s tests -t .      # unit tests
 
 # Cache
 ./cache_metrics.sh         # start metric caching daemon
