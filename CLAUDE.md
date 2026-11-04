@@ -24,6 +24,7 @@ Each `.sh` script activates the venv and delegates to the matching `.py` file.
 # Server power (via HP iLO)
 ./server_start.sh --ip <ilo_ip> --user <u> --password <p>
 ./server_stop.sh  --ip <ilo_ip> --user <u> --password <p>
+./ilo_health.sh   --ip <ilo_ip> --user <u> --password <p> [--timeout 15]   # Redfish sensors (temperatures, PSU, power)
 
 # VM lifecycle (via vCenter)
 ./vm_start.sh     --moid <vm_moid> --ip <vcenter_ip> --user <u> --password <p>

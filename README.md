@@ -78,6 +78,7 @@ When power comes back, the recorded events can be replayed with:
 - `vm_metrics.py` returns metrics for a virtual machine.
 - `inventory_metrics.sh` prints the metrics of every VM and ESXi host in a single vCenter session (one `PropertyCollector` call per object type).
 - `vcenter_events.sh --since <ISO> --max 500` prints power, HA, host connection and migration events since a cursor.
+- `ilo_health.sh --ip <ilo> --user <u> --password <p>` prints the Redfish hardware health of a server: inlet and CPU temperatures, fans, power draw, power supplies and system health rollup.
 - `ups_battery.sh --ip <ip>` prints the remaining UPS battery time in minutes. With `--format json` it prints the full telemetry (status, charge, runtime, load, voltages, temperature) collected via SNMP UPS-MIB, NUT (`--source nut --ups-name <name>`) or the HTTP mock. Missing values are `null`.
 
 All commands accept `--help` for detailed parameters.
