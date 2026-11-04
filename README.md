@@ -76,7 +76,7 @@ When power comes back, the recorded events can be replayed with:
 - `list_vm.py` lists all VMs from the given server.
 - `server_info.py` and `server_metrics.py` return information or metrics for a host.
 - `vm_metrics.py` returns metrics for a virtual machine.
-- `ups_battery.sh` prints the remaining UPS battery time via SNMP.
+- `ups_battery.sh --ip <ip>` prints the remaining UPS battery time in minutes. With `--format json` it prints the full telemetry (status, charge, runtime, load, voltages, temperature) collected via SNMP UPS-MIB, NUT (`--source nut --ups-name <name>`) or the HTTP mock. Missing values are `null`.
 
 All commands accept `--help` for detailed parameters.
 
