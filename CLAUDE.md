@@ -40,6 +40,8 @@ Each `.sh` script activates the venv and delegates to the matching `.py` file.
 ./vm_metrics.sh     --moid <vm_moid> --ip <vcenter_ip> --user <u> --password <p>
 ./list_vm.sh        --ip <vcenter_ip> --user <u> --password <p>
 ./list_server.sh    --ip <vcenter_ip> --user <u> --password <p>
+./inventory_metrics.sh --ip <vcenter_ip> --user <u> --password <p>                  # all VMs + hosts, one session
+./vcenter_events.sh    --ip <vcenter_ip> --user <u> --password <p> --since <ISO>    # power/HA/host/migration events
 
 # UPS
 ./ups_battery.sh --ip <ip>                      # remaining minutes (legacy output)
