@@ -4,6 +4,7 @@ import socket
 
 from data_retriever.dto import result_message, vms_list_info, output
 from data_retriever.vm_ware_connection import VMwareConnection
+from data_retriever.cli_security import add_password_argument
 
 
 def list_vm(ip: str, user: str, password: str, port: int) -> dict:
@@ -39,7 +40,7 @@ if __name__ == "__main__":
     parser = ArgumentParser(description="Lister les VM d'un serveur")
     parser.add_argument("--ip", required=True, help="Adresse IP du vCenter")
     parser.add_argument("--user", required=True, help="Nom d'utilisateur du vCenter")
-    parser.add_argument("--password", required=True, help="Mot de passe de l'utilisateur du vCenter")
+    add_password_argument(parser, help="Mot de passe de l'utilisateur du vCenter")
     parser.add_argument("--port", type=int, default=443, help="Port du vCenter (optionnel, 443 par défaut)")
 
     args = parser.parse_args()

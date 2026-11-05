@@ -7,6 +7,8 @@ import urllib3
 from requests.auth import HTTPBasicAuth
 
 from data_retriever.redfish_health import parse_health
+from data_retriever.cli_security import requests_verify
+from data_retriever.cli_security import add_password_argument
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -17,7 +19,7 @@ class RedfishClient:
         self.base = self.base.rstrip("/")
         self.auth = HTTPBasicAuth(user, password)
         self.timeout = timeout
-        self.verify_ssl = verify_ssl
+        self.verify_ssl = requests_verify(force=verify_ssl)
 
     def get(self, path: str) -> dict:
         response = requests.get(
@@ -66,9 +68,9 @@ def main() -> int:
     parser = ArgumentParser(description="Read hardware health sensors through the iLO Redfish API")
     parser.add_argument("--ip", required=True, help="iLO address")
     parser.add_argument("--user", required=True, help="iLO user")
-    parser.add_argument("--password", required=True, help="iLO password")
+    add_password_argument(parser, help="iLO password")
     parser.add_argument("--timeout", type=int, default=15, help="HTTP timeout in seconds")
-    parser.add_argument("--verify-ssl", action="store_true", help="Verify the iLO certificate")
+    parser.add_argument("--verify-ssl", action="store_true", help="Force certificate verification (otherwise UPSTRA_VERIFY_SSL decides)")
     args = parser.parse_args()
 
     try:

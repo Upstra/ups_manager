@@ -56,6 +56,8 @@ python3 -m unittest discover -s tests -t .      # unit tests
 
 All commands accept `--help`. All print JSON to stdout.
 
+Passwords can (and should) be passed through `UPSTRA_PASSWORD` instead of `--password`, and TLS verification is enabled with `UPSTRA_VERIFY_SSL=true` (+ `UPSTRA_CA_BUNDLE`). See `data_retriever/cli_security.py`.
+
 ## Architecture
 
 ### `data_retriever/` — Shared Library
@@ -70,6 +72,7 @@ All commands accept `--help`. All print JSON to stdout.
 | `migration_event_queue.py` | Redis-backed event queue (`EventQueue`) — persists migration operations so `restart_plan.sh` can replay them |
 | `dto.py` | Shared data transfer objects |
 | `decrypt_password.py` | AES decryption for passwords stored encrypted in the YAML plan |
+| `cli_security.py` | Password from environment, configurable TLS verification for vCenter/iLO |
 
 ### Migration Plan Flow
 

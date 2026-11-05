@@ -125,3 +125,13 @@ This file is provided as `plans/migration-example.yml` and can be adapted to you
 
 The scripts print JSON formatted results to stdout and exit with a message describing the executed operation.
 They can easily be integrated into automation tools or other monitoring systems.
+
+## Security
+
+- **Secrets out of the process list.** Every script accepts its password from the `UPSTRA_PASSWORD` environment variable instead of `--password`, and `ups_battery.sh` reads the SNMP community from `UPSTRA_SNMP_COMMUNITY`. Command-line arguments are readable by every local user through `ps`; the environment of a process is not.
+- **Configurable TLS verification.** `UPSTRA_VERIFY_SSL=true` turns certificate verification on for vCenter and iLO connections, and `UPSTRA_CA_BUNDLE=/path/ca.pem` points to the CA that signed internal certificates. It stays off by default because most iLO ship self-signed certificates; turn it on as soon as your certificates are signed.
+
+```bash
+UPSTRA_PASSWORD='***' ./inventory_metrics.sh --ip vcenter.lan --user svc-upstra
+UPSTRA_VERIFY_SSL=true UPSTRA_CA_BUNDLE=/etc/upstra/ca.pem UPSTRA_PASSWORD='***' ./ilo_health.sh --ip ilo-01.lan --user upstra
+```

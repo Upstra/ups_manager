@@ -4,8 +4,11 @@ from json import dumps as json_dumps
 from shutil import which
 from subprocess import run, TimeoutExpired
 
+import os
+
 import requests
 
+from data_retriever.cli_security import SNMP_COMMUNITY_ENV
 from data_retriever.ups_telemetry import (
     SNMP_OIDS,
     parse_snmpget_output,
@@ -87,7 +90,7 @@ def main() -> int:
     parser.add_argument("--format", choices=["minutes", "json"], default="minutes")
     parser.add_argument("--source", choices=["auto", "snmp", "nut", "http"], default="auto")
     parser.add_argument("--ups-name", default="ups", help="NUT UPS name")
-    parser.add_argument("--community", default="public", help="SNMP community")
+    parser.add_argument("--community", default=os.environ.get(SNMP_COMMUNITY_ENV, "public"), help=f"SNMP community (or {SNMP_COMMUNITY_ENV})")
     parser.add_argument("--timeout", type=int, default=5)
     args = parser.parse_args()
 
