@@ -1,6 +1,8 @@
 from requests import get as http_get, post as http_post
 from requests.auth import HTTPBasicAuth
 import urllib3
+
+from data_retriever.cli_security import requests_verify
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
@@ -11,9 +13,9 @@ class PayloadException(Exception):
 
 
 class Ilo:
-    def __init__(self, ip: str, user: str, password: str, verify_ssl=False):
+    def __init__(self, ip: str, user: str, password: str, verify_ssl=None):
         self.ip = ip
-        self.verify_ssl = verify_ssl
+        self.verify_ssl = requests_verify(force=bool(verify_ssl))
         self._auth = HTTPBasicAuth(user, password)
         self._reset_uri = ""
         self._headers = {"Content-Type": "application/json"}

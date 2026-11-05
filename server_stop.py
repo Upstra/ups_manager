@@ -3,6 +3,7 @@ from requests.exceptions import RequestException, HTTPError
 
 from data_retriever.dto import result_message, output
 from data_retriever.ilo import Ilo, PayloadException
+from data_retriever.cli_security import add_password_argument
 
 
 def server_stop(ip: str, user: str, password: str) -> dict:
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     parser = ArgumentParser(description="Éteindre un serveur grâce à son ilo")
     parser.add_argument("--ip", required=True, help="Adresse IP de l'Ilo")
     parser.add_argument("--user", required=True, help="Nom d'utilisateur de l'Ilo du serveur")
-    parser.add_argument("--password", required=True, help="Mot de passe de l'Ilo du serveur")
+    add_password_argument(parser, help="Mot de passe de l'Ilo du serveur")
 
     args = parser.parse_args()
 

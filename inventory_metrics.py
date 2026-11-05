@@ -12,6 +12,7 @@ from data_retriever.inventory import (
     vm_record,
 )
 from data_retriever.vm_ware_connection import VMwareConnection
+from data_retriever.cli_security import add_password_argument
 
 PAGE_SIZE = 500
 
@@ -62,7 +63,7 @@ def main() -> int:
     parser = ArgumentParser(description="Collect metrics of every VM and ESXi host in one vCenter session")
     parser.add_argument("--ip", required=True, help="vCenter address")
     parser.add_argument("--user", required=True, help="vCenter user")
-    parser.add_argument("--password", required=True, help="vCenter password")
+    add_password_argument(parser, help="vCenter password")
     parser.add_argument("--port", type=int, default=443, help="vCenter port")
     args = parser.parse_args()
 

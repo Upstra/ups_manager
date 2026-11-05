@@ -7,6 +7,7 @@ from data_retriever.dto import result_message, output
 from data_retriever.vm_ware_connection import VMwareConnection
 from vm_start import vm_start
 from vm_stop import vm_stop
+from data_retriever.cli_security import add_password_argument
 
 
 def vm_migration(vm: vim.VirtualMachine, vm_name: str, target_host: vim.HostSystem, target_moid: str) -> dict:
@@ -95,7 +96,7 @@ if __name__ == "__main__":
     parser.add_argument("--dist_moid", required=True, help="Le Managed Object ID du serveur ESXi destination")
     parser.add_argument("--ip", required=True, help="Adresse IP du vCenter")
     parser.add_argument("--user", required=True, help="Nom d'utilisateur du vCenter")
-    parser.add_argument("--password", required=True, help="Mot de passe de l'utilisateur du vCenter")
+    add_password_argument(parser, help="Mot de passe de l'utilisateur du vCenter")
     parser.add_argument("--port", type=int, default=443, help="Port du vCenter (optionnel, 443 par défaut)")
 
     args = parser.parse_args()

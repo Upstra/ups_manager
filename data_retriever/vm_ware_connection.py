@@ -1,6 +1,7 @@
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
-import ssl
+
+from data_retriever.cli_security import ssl_context
 
 
 class VMwareConnection:
@@ -8,7 +9,7 @@ class VMwareConnection:
         self._content = None
         self._si = None
 
-    def connect(self, host: str, user: str, password: str, port=443, verified_ssl=False):
+    def connect(self, host: str, user: str, password: str, port=443, verified_ssl=None):
         """
         Connect to the server where VMs are located
         Args:
@@ -16,15 +17,12 @@ class VMwareConnection:
             user (str): The username for authentication
             password (str): The password of the user
             port (int): The port to use for the connection (default to 443)
-            verified_ssl (bool): Whether or not to verify the SSL certificate (default to False)
+            verified_ssl (bool): Force SSL verification, otherwise UPSTRA_VERIFY_SSL decides (default to off)
         Raises:
             vim.fault.InvalidLogin: If credentials are invalid
             Exception: If connection fails for any reason
         """
-        context = ssl.create_default_context()
-        if not verified_ssl:
-            context.check_hostname = False
-            context.verify_mode = ssl.CERT_NONE
+        context = ssl_context(force=bool(verified_ssl))
         self._si = SmartConnect(host=host, user=user, pwd=password, port=port, sslContext=context)
         self._content = self._si.RetrieveContent()
 

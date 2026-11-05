@@ -7,6 +7,7 @@ from pyVmomi import vim
 
 from data_retriever.inventory import event_record, iso
 from data_retriever.vm_ware_connection import VMwareConnection
+from data_retriever.cli_security import add_password_argument
 
 EVENT_TYPES = [
     vim.event.VmPoweredOffEvent,
@@ -74,7 +75,7 @@ def main() -> int:
     parser = ArgumentParser(description="Read vCenter events since a cursor")
     parser.add_argument("--ip", required=True, help="vCenter address")
     parser.add_argument("--user", required=True, help="vCenter user")
-    parser.add_argument("--password", required=True, help="vCenter password")
+    add_password_argument(parser, help="vCenter password")
     parser.add_argument("--port", type=int, default=443, help="vCenter port")
     parser.add_argument("--since", help="ISO date of the oldest event to read")
     parser.add_argument("--max", type=int, default=500, help="Maximum number of events")
