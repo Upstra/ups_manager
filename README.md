@@ -24,6 +24,22 @@ powering hosts back on when power is restored.
 └── requirements.txt      # Python dependencies
 ```
 
+## Architecture
+
+```mermaid
+flowchart LR
+    API["infra-control<br/>PythonExecutorService"] -- "args + secrets in env" --> SH["*.sh wrappers<br/>(venv)"]
+    SH --> PY["Python scripts"]
+    PY --> DR["data_retriever<br/>shared library"]
+    DR -- "pyVmomi" --> VC["vCenter / ESXi"]
+    DR -- "Redfish" --> ILO["HP iLO"]
+    DR -- "SNMP / NUT / HTTP" --> UPS["UPS"]
+    DR -- "events queue, metrics cache" --> REDIS[("Redis")]
+    PY -- "one JSON object on stdout" --> API
+```
+
+Every script prints a single JSON object on stdout and exits with a non-zero code on failure, so the backend can compose them without parsing logs.
+
 ## Installation
 
 A recent Python (>3.9) interpreter is required. The `init.sh` script will create a local virtual environment and install all dependencies:
@@ -135,3 +151,7 @@ They can easily be integrated into automation tools or other monitoring systems.
 UPSTRA_PASSWORD='***' ./inventory_metrics.sh --ip vcenter.lan --user svc-upstra
 UPSTRA_VERIFY_SSL=true UPSTRA_CA_BUNDLE=/etc/upstra/ca.pem UPSTRA_PASSWORD='***' ./ilo_health.sh --ip ilo-01.lan --user upstra
 ```
+
+## License
+
+UPS Manager is released under the **GNU Affero General Public License v3.0** (`AGPL-3.0-only`), see [`LICENSE`](LICENSE). Any modified version, including one only offered as a network service, must be published under the same license.
