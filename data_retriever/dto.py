@@ -48,7 +48,10 @@ def vms_list_info(vms: list[vim.VirtualMachine]) -> dict:
             "version": vm.config.version,
             "createDate": vm.config.createDate.isoformat() if vm.config.createDate else "",
             "numCoresPerSocket": vm.config.hardware.numCoresPerSocket,
-            "numCPU": vm.config.hardware.numCPU
+            "numCPU": vm.config.hardware.numCPU,
+            # Read by the discovery views; without them every VM showed "unknown".
+            "powerState": vm.runtime.powerState,
+            "memoryMB": vm.config.hardware.memoryMB
         }
         if vm.runtime.host:
             json_object["esxiHostName"] = vm.runtime.host.name
